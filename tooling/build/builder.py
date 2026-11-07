@@ -7,8 +7,7 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.pycache_prefix = str(ROOT / 'tmp/python-cache')
+from tooling.common import ROOT, MANIFEST, load_manifest
 
 import nbformat
 
@@ -41,7 +40,7 @@ def check_code(cells):
                 names = [a.name for a in node.names]
             else:
                 continue
-            if any(name.split('.')[0] in {'src', 'notebooks', 'scripts'} for name in names):
+            if any(name.split('.')[0] in {'src', 'notebooks', 'scripts', 'tooling', 'tests', 'config'} for name in names):
                 raise ValueError(f'Project import remains: {names}')
 
 
@@ -54,13 +53,13 @@ def build_notebook(root=ROOT, output=None):
         if output.suffix.lower() != '.ipynb':
             raise ValueError('Build output must be an .ipynb file')
         if any(output.is_relative_to(root / name) for name in
-               ['src', 'scripts', 'notebooks', 'data', 'tests', 'docs']):
+               ['src', 'tooling', 'config', 'dataset', 'scripts', 'notebooks', 'data', 'tests', 'docs']):
             raise ValueError('Build output cannot be placed inside source or data directories')
-    manifest = json.loads((root / 'notebook_manifest.json').read_text())
+    manifest = json.loads((root / MANIFEST).read_text())
     if output is not None:
         protected = {project_path(root, s['file']) for s in manifest['sections']}
         protected.update(project_path(root, name) for name in manifest.get('modules', []))
-        protected.add(root / 'notebook_manifest.json')
+        protected.add(root / MANIFEST)
         if output in protected:
             raise ValueError('Refusing to overwrite modular sources')
     if manifest['version'] != 1:
@@ -97,13 +96,15 @@ def build_notebook(root=ROOT, output=None):
     return notebook
 
 
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=ROOT / 'tmp/solution.generated.ipynb')
+    parser.add_argument('--target', choices=['submission', 'validation'], default='submission')
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
-    result = build_notebook(output=args.output)
-    print(f'Built {args.output}: {len(result.cells)} cells')
-
+    output = args.output or ROOT / load_manifest()['targets'][args.target]['output']
+    result = build_notebook(output=output)
+    print(f'Built {output}: {len(result.cells)} cells')
 
 if __name__ == '__main__':
     main()

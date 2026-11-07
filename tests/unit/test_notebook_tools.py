@@ -9,9 +9,9 @@ import nbformat
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from build import build_notebook
-from validate import compare_structure, compare_values, write_report
+from tooling.build.builder import build_notebook
+from tests.support.comparison import compare_structure, compare_values
+from tooling.testing.reporting import write_report
 
 
 class BuilderTests(unittest.TestCase):
@@ -30,7 +30,8 @@ class BuilderTests(unittest.TestCase):
         nbformat.write(nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell('last = result')]), self.root / 'notebooks/02.ipynb')
         (self.root / 'src/helpers.py').write_text('def f(value):\n    return value + offset\n')
         manifest = {'version': 1, 'sections': [{'file': 'notebooks/01.ipynb'}, {'file': 'notebooks/02.ipynb'}], 'metadata': {}, 'nbformat': 4, 'nbformat_minor': 5}
-        (self.root / 'notebook_manifest.json').write_text(json.dumps(manifest))
+        (self.root / 'config/build').mkdir(parents=True)
+        (self.root / 'config/build/project.json').write_text(json.dumps(manifest))
 
     def test_order_attachments_and_late_bound_globals(self):
         nb = build_notebook(self.root)
@@ -49,14 +50,14 @@ class BuilderTests(unittest.TestCase):
         self.assertIn('return value * offset', build_notebook(self.root).cells[1].source)
 
     def test_refuses_to_overwrite_either_original(self):
-        for name in ['solution.ipynb', 'solution.original.ipynb', 'notebooks/01.ipynb', 'notebook_manifest.json']:
+        for name in ['solution.ipynb', 'solution.original.ipynb', 'notebooks/01.ipynb', 'config/build/project.json']:
             with self.assertRaises(ValueError):
                 build_notebook(self.root, self.root / name)
 
     def test_output_cannot_replace_tooling_or_enter_source_data_directories(self):
         for name in ['scripts/build.py', 'README.md', 'data/credit_risk_dataset.csv',
                      'scripts/copy.ipynb', 'data/copy.ipynb', 'src/copy.ipynb',
-                     'notebooks/copy.ipynb']:
+                     'notebooks/copy.ipynb', 'dataset/copy.ipynb', 'tooling/copy.ipynb', 'config/copy.ipynb']:
             with self.subTest(name=name), self.assertRaises(ValueError):
                 build_notebook(self.root, self.root / name)
 
@@ -100,14 +101,14 @@ class ValidationTests(unittest.TestCase):
                                   [], ['Original hash changed: solution.ipynb'],
                                   runs, [], True)
             self.assertFalse(passed)
-            report = (root / 'tmp/validation_report.md').read_text()
+            report = (root / 'tmp/reports/validation_report.md').read_text()
             self.assertNotIn('solution.original.ipynb сохранён без изменений', report)
             self.assertIn('Original hash changed', report)
 
     def test_capture_excludes_kernel_history_and_plot_handles(self):
         import pickle
         import matplotlib.pyplot as plt
-        runtime = Path(__file__).resolve().parents[1] / 'scripts/capture_runtime.py'
+        runtime = Path(__file__).resolve().parents[2] / 'tooling/execution/capture.py'
         namespace = {}
         show = plt.show
         try:
