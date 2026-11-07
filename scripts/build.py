@@ -5,10 +5,12 @@ import ast
 import copy
 import json
 from pathlib import Path
-
-import nbformat
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.pycache_prefix = str(ROOT / 'tmp/python-cache')
+
+import nbformat
 
 
 def project_path(root, relative):
@@ -97,7 +99,7 @@ def build_notebook(root=ROOT, output=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=ROOT / 'solution.generated.ipynb')
+    parser.add_argument('--output', type=Path, default=ROOT / 'tmp/solution.generated.ipynb')
     args = parser.parse_args()
     result = build_notebook(output=args.output)
     print(f'Built {args.output}: {len(result.cells)} cells')

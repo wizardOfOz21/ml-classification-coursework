@@ -16,6 +16,9 @@ import tempfile
 import traceback
 import warnings
 
+sys.pycache_prefix = str(Path(__file__).resolve().parents[1] / 'tmp/python-cache')
+os.environ.setdefault('MPLCONFIGDIR', str(Path(__file__).resolve().parents[1] / 'tmp/matplotlib'))
+
 import nbformat
 from nbclient import NotebookClient
 from jupyter_client import KernelManager
@@ -96,7 +99,9 @@ def modular_notebook(root, manifest):
 
 def execute(notebook, label, root, artifacts, isolated=True, timeout=180):
     """Each run gets a new kernel and a different working directory."""
-    with tempfile.TemporaryDirectory(prefix=f'notebook-{label}-') as directory:
+    runtime_root = root / 'tmp/runs'
+    runtime_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f'notebook-{label}-', dir=runtime_root) as directory:
         temp = Path(directory)
         working = temp if isolated else root
         if isolated:
@@ -116,7 +121,7 @@ def execute(notebook, label, root, artifacts, isolated=True, timeout=180):
         env = os.environ.copy()
         env.pop('PYTHONPATH', None)
         env.update(IPYTHONDIR=str(temp / 'ipython'), JUPYTER_RUNTIME_DIR=str(temp / 'runtime'),
-                   MPLCONFIGDIR=str(temp / 'matplotlib'), PYTHONHASHSEED='0', MPLBACKEND='module://matplotlib_inline.backend_inline')
+                   MPLCONFIGDIR=str(temp / 'matplotlib'), PYTHONPYCACHEPREFIX=str(temp / 'python-cache'), PYTHONHASHSEED='0', MPLBACKEND='module://matplotlib_inline.backend_inline')
         result = {'status': 'passed', 'isolated': isolated, 'cwd_has_only_data': isolated}
         try:
             client = NotebookClient(instrumented, km=km, timeout=timeout,
@@ -191,8 +196,9 @@ def write_report(root, manifest, structure, integrity, runs, differences, stored
               '## Окружение', '', f'- Python: `{sys.version.split()[0]}`',
               f'- Интерпретатор: `{sys.executable}`',
               f"- SHA-256 исходника: `{manifest['baseline_sha256']}`", '',
-              'Подробные выполненные ноутбуки, снимки результатов и JSON-статус: `validation_artifacts/`', '']
-    (root / 'validation_report.md').write_text('\n'.join(lines), encoding='utf-8')
+              'Подробные выполненные ноутбуки, снимки результатов и JSON-статус: `tmp/validation_artifacts/`', '']
+    (root / 'tmp').mkdir(parents=True, exist_ok=True)
+    (root / 'tmp/validation_report.md').write_text('\n'.join(lines), encoding='utf-8')
     return passed
 
 
@@ -201,8 +207,8 @@ def main():
     parser.add_argument('--timeout', type=int, default=180, help='Timeout per code cell in seconds')
     args = parser.parse_args()
     root = ROOT
-    artifacts = root / 'validation_artifacts'
-    artifacts.mkdir(exist_ok=True)
+    artifacts = root / 'tmp/validation_artifacts'
+    artifacts.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((root / 'notebook_manifest.json').read_text())
     packages = ['pandas', 'numpy', 'scipy', 'scikit-learn', 'matplotlib', 'seaborn', 'ipython', 'nbformat', 'nbclient', 'ipykernel', 'jupyter-client']
     environment = {'python': sys.version, 'executable': sys.executable, 'packages': {p: importlib.metadata.version(p) for p in packages}}
@@ -212,7 +218,7 @@ def main():
         if hashlib.sha256((root / name).read_bytes()).hexdigest() != manifest['baseline_sha256']:
             integrity.append(f'Original hash changed: {name}')
     original = nbformat.read(root / manifest['baseline'], as_version=4)
-    generated = nbformat.read(root / 'solution.generated.ipynb', as_version=4)
+    generated = nbformat.read(root / 'tmp/solution.generated.ipynb', as_version=4)
     rebuilt = build_notebook(root)
     structure = compare_structure(original, generated)
     # Compare to current development files too, so a stale generated file fails validation
@@ -236,7 +242,7 @@ def main():
     status = {'passed': passed, 'integrity_errors': integrity, 'structural_errors': structure,
               'differences': differences, 'runs': {k: {a: b for a, b in v.items() if a != 'snapshot'} for k, v in runs.items()}}
     (artifacts / 'status.json').write_text(json.dumps(status, ensure_ascii=False, indent=2) + '\n')
-    print(f'{"PASS" if passed else "NOT VERIFIED"}: {root / "validation_report.md"}')
+    print(f'{"PASS" if passed else "NOT VERIFIED"}: {root / "tmp/validation_report.md"}')
     raise SystemExit(0 if passed else 1)
 
 

@@ -100,7 +100,7 @@ class ValidationTests(unittest.TestCase):
                                   [], ['Original hash changed: solution.ipynb'],
                                   runs, [], True)
             self.assertFalse(passed)
-            report = (root / 'validation_report.md').read_text()
+            report = (root / 'tmp/validation_report.md').read_text()
             self.assertNotIn('solution.original.ipynb сохранён без изменений', report)
             self.assertIn('Original hash changed', report)
 

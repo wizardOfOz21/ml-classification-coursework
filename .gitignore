@@ -1,0 +1,47 @@
+# Локальные Python-окружения
+.venv/
+venv/
+env/
+
+# Кэши Python, тестов и анализаторов
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Временные файлы Jupyter
+.ipynb_checkpoints/
+
+# Воспроизводимые результаты сборки и проверок
+/tmp/
+# Совместимость со старыми путями
+/solution.generated.ipynb
+/validation_artifacts/
+
+# Локальные настройки редакторов
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS и Windows
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Локальные секреты (шаблоны можно хранить в Git)
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Временные файлы и журналы
+*.log
+*.tmp
+*.bak
