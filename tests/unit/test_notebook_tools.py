@@ -45,6 +45,28 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(namespace['last'], 6)
         self.assertNotIn('development placeholder', nb.cells[1].source)
 
+    def test_nested_notebook_includes_preserve_order(self):
+        part = nbformat.v4.new_notebook(cells=[
+            nbformat.v4.new_code_cell("raise RuntimeError('include must expand')", metadata={'modular': {'include': 'notebooks/01.ipynb'}}),
+            nbformat.v4.new_code_cell("raise RuntimeError('include must expand')", metadata={'modular': {'include': 'notebooks/02.ipynb'}}),
+        ])
+        nbformat.write(part, self.root / 'notebooks/root.ipynb')
+        manifest_path = self.root / 'config/build/project.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['sections'] = [{'file': 'notebooks/root.ipynb'}]
+        manifest_path.write_text(json.dumps(manifest))
+        result = build_notebook(self.root)
+        self.assertEqual(len(result.cells), 3)
+        namespace = {}
+        for cell in result.cells:
+            if cell.cell_type == 'code':
+                exec(cell.source, namespace)
+        self.assertEqual(namespace['last'], 6)
+        part.cells.append(nbformat.v4.new_code_cell('', metadata={'modular': {'include': 'notebooks/root.ipynb'}}))
+        nbformat.write(part, self.root / 'notebooks/root.ipynb')
+        with self.assertRaises(ValueError):
+            build_notebook(self.root)
+
     def test_edited_module_is_used_in_next_build(self):
         (self.root / 'src/helpers.py').write_text('def f(value):\n    return value * offset\n')
         self.assertIn('return value * offset', build_notebook(self.root).cells[1].source)

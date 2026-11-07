@@ -6,6 +6,7 @@ from tooling.build.builder import build_notebook
 from tooling.execution.executor import execute, modular_notebook
 from tooling.testing.reporting import write_report
 from tests.support.comparison import compare_structure, compare_values
+from tests.support.notebook_content import compare_legacy_content
 warnings.filterwarnings('ignore', category=nbformat.warnings.MissingIDFieldWarning)
 
 def layout_baseline(notebook):
@@ -33,10 +34,11 @@ def run_equivalence(root=ROOT, timeout=None):
     original = nbformat.read(root / manifest['baseline'], as_version=4)
     generated = nbformat.read(root / settings['generated'], as_version=4)
     rebuilt = build_notebook(root)
-    structure = compare_structure(layout_baseline(original), generated)
+    structure = compare_structure(layout_baseline(original), generated, compare_markdown=False)
+    narrative_errors, stored_outputs = compare_legacy_content(original, generated, root, manifest)
+    structure.extend(narrative_errors)
     # Compare to current development files too, so a stale generated file fails validation
     structure += [f'Current sources: {s}' for s in compare_structure(rebuilt, generated)]
-    stored_outputs = [c.get('outputs') for c in original.cells] == [c.get('outputs') for c in generated.cells]
     if not stored_outputs:
         structure.append('Stored cell outputs differ from the original')
     runs = {}

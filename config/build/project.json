@@ -25,65 +25,30 @@
   "nbformat_minor": 5,
   "sections": [
     {
-      "file": "src/notebooks/00_preliminary.ipynb",
-      "title": "0 Предварительный анализ",
-      "original_cell_range": [
-        0,
-        8
-      ]
-    },
-    {
-      "file": "src/notebooks/01_problem.ipynb",
-      "title": "1 Постановка задачи",
-      "original_cell_range": [
-        8,
-        10
-      ]
-    },
-    {
-      "file": "src/notebooks/02_overview.ipynb",
-      "title": "2.1 Общий обзор",
-      "original_cell_range": [
-        10,
-        16
-      ]
-    },
-    {
-      "file": "src/notebooks/03_data_quality.ipynb",
-      "title": "2.2 Проверка корректности данных",
-      "original_cell_range": [
-        16,
-        23
-      ]
-    },
-    {
-      "file": "src/notebooks/04_univariate.ipynb",
-      "title": "2.3 Одномерный анализ",
-      "original_cell_range": [
-        23,
-        59
-      ]
-    },
-    {
-      "file": "src/notebooks/05_split.ipynb",
-      "title": "3 Разделение выборки",
-      "original_cell_range": [
-        59,
-        62
-      ]
-    },
-    {
-      "file": "src/notebooks/06_multivariate.ipynb",
-      "title": "4 Многомерный анализ",
-      "original_cell_range": [
-        62,
-        68
-      ]
+      "file": "src/notebooks/index.ipynb",
+      "title": "Курсовая: семь этапов"
     }
   ],
   "modules": [
-    "src/analysis/associations.py",
-    "src/analysis/visualization.py"
+    "src/notebooks/01_problem/_code/03_load_and_describe.py",
+    "src/notebooks/01_problem/_code/05_types_and_domains.py",
+    "src/notebooks/01_problem/_code/07_semantic_interpretations.py",
+    "src/notebooks/03_analysis/01_basic_eda/_code/17_duplicates.py",
+    "src/notebooks/03_analysis/01_basic_eda/_code/19_semantic_checks.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/24_age.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/26_housing.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/29_income.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/32_loan_intent.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/35_employment.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/38_grade.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/41_amount.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/44_interest_rate.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/47_income_share.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/50_past_default.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/53_credit_history.py",
+    "src/notebooks/03_analysis/01_basic_eda/03_univariate/_code/56_target.py",
+    "src/notebooks/03_analysis/03_correlations/_code/64_calculate_associations.py",
+    "src/notebooks/03_analysis/03_correlations/_code/66_plot_associations.py"
   ],
   "archived_working": "tests/fixtures/solution.working-before-layout.ipynb",
   "archived_working_sha256": "dabf4a4fe05fcea3e85c1c77426715328f158133c69f766729b4098d9836a263",
@@ -95,5 +60,37 @@
       "output": "tmp/build/validation/solution.ipynb"
     }
   },
-  "dataset_directory": "dataset"
+  "dataset_directory": "dataset",
+  "stages": [
+    {
+      "file": "src/notebooks/01_problem/index.ipynb",
+      "title": "1 Постановка задачи"
+    },
+    {
+      "file": "src/notebooks/02_collection.ipynb",
+      "title": "2 Сбор данных"
+    },
+    {
+      "file": "src/notebooks/03_analysis/index.ipynb",
+      "title": "3 Анализ, выбор модели и разбиение данных"
+    },
+    {
+      "file": "src/notebooks/04_preprocessing.ipynb",
+      "title": "4 Финальная предобработка"
+    },
+    {
+      "file": "src/notebooks/05_training.ipynb",
+      "title": "5 Обучение"
+    },
+    {
+      "file": "src/notebooks/06_evaluation.ipynb",
+      "title": "6 Оценка"
+    },
+    {
+      "file": "src/notebooks/07_operation.ipynb",
+      "title": "7 Эксплуатация"
+    }
+  ],
+  "documentation_edits": "config/build/documentation-edits.json",
+  "legacy_cell_count": 68
 }

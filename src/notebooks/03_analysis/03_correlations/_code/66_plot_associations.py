@@ -57,3 +57,9 @@ def plot_association_matrix(matrix, title):
         labelpad=15,
     )
     plt.show()
+
+
+plot_association_matrix(
+    association_matrix,
+    'Матрица попарных ассоциаций, train',
+)

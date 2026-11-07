@@ -67,8 +67,8 @@ def build_notebook(root=ROOT, output=None):
     notebook = nbformat.v4.new_notebook(metadata=copy.deepcopy(manifest['metadata']))
     notebook.nbformat_minor = manifest['nbformat_minor']
     seen_sections, seen_modules = set(), set()
-    for section in manifest['sections']:
-        path = project_path(root, section['file'])
+    def append_section(relative):
+        path = project_path(root, relative)
         if path in seen_sections:
             raise ValueError(f'Duplicate section: {path}')
         seen_sections.add(path)
@@ -79,6 +79,11 @@ def build_notebook(root=ROOT, output=None):
             transport = cell.metadata.pop('modular', {})
             if transport.get('development_only'):
                 continue
+            if 'include' in transport:
+                if transport.get('splices'):
+                    raise ValueError('A cell cannot include a notebook and splice Python together')
+                append_section(transport['include'])
+                continue
             for splice in transport.get('splices', []):
                 module = project_path(root, splice['path'])
                 if module in seen_modules:
@@ -88,6 +93,8 @@ def build_notebook(root=ROOT, output=None):
                 cell.source = cell.source.replace(splice['placeholder'], module.read_text(encoding='utf-8'))
                 seen_modules.add(module)
             notebook.cells.append(cell)
+    for section in manifest['sections']:
+        append_section(section['file'])
     check_code(notebook.cells)
     nbformat.validate(notebook)
     if output is not None:

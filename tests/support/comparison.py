@@ -3,11 +3,11 @@ import ast
 import numpy as np
 import pandas as pd
 
-def compare_structure(original, generated):
+def compare_structure(original, generated, compare_markdown=True):
     errors = []
     text_a = [(c.cell_type, c.source, dict(c.get('attachments', {}))) for c in original.cells if c.cell_type != 'code']
     text_b = [(c.cell_type, c.source, dict(c.get('attachments', {}))) for c in generated.cells if c.cell_type != 'code']
-    if text_a != text_b:
+    if compare_markdown and text_a != text_b:
         errors.append('Markdown/raw cells, order or embedded attachments differ')
     def code_tree(notebook):
         statements = []
