@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "baseline": "solution.original.ipynb",
+  "baseline_sha256": "952494a06db9bc9a5c8e3fb31148b88b5e1d22dd48ce96b52b949e9792f50e6b",
+  "metadata": {
+    "kernelspec": {
+      "display_name": ".venv (3.13.18)",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.13.18"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5,
+  "sections": [
+    {
+      "file": "notebooks/00_preliminary.ipynb",
+      "title": "0 Предварительный анализ",
+      "original_cell_range": [
+        0,
+        8
+      ]
+    },
+    {
+      "file": "notebooks/01_problem.ipynb",
+      "title": "1 Постановка задачи",
+      "original_cell_range": [
+        8,
+        10
+      ]
+    },
+    {
+      "file": "notebooks/02_overview.ipynb",
+      "title": "2.1 Общий обзор",
+      "original_cell_range": [
+        10,
+        16
+      ]
+    },
+    {
+      "file": "notebooks/03_data_quality.ipynb",
+      "title": "2.2 Проверка корректности данных",
+      "original_cell_range": [
+        16,
+        23
+      ]
+    },
+    {
+      "file": "notebooks/04_univariate.ipynb",
+      "title": "2.3 Одномерный анализ",
+      "original_cell_range": [
+        23,
+        59
+      ]
+    },
+    {
+      "file": "notebooks/05_split.ipynb",
+      "title": "3 Разделение выборки",
+      "original_cell_range": [
+        59,
+        62
+      ]
+    },
+    {
+      "file": "notebooks/06_multivariate.ipynb",
+      "title": "4 Многомерный анализ",
+      "original_cell_range": [
+        62,
+        68
+      ]
+    }
+  ],
+  "modules": [
+    "src/associations.py",
+    "src/visualization.py"
+  ]
+}
