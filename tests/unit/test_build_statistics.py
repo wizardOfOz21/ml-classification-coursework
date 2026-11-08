@@ -67,18 +67,42 @@ if ready:
             path = Path(directory) / 'custom.ipynb'
             nbformat.write(notebook, path)
             report = module.write_statistics(path)
-            self.assertEqual(report.name, 'custom.stats.txt')
+            self.assertEqual(report.name, 'custom.stats.html')
             before = report.read_text()
-            self.assertIn(str(path.stat().st_size), before)
+            self.assertIn(module.format_size(path.stat().st_size), before)
             notebook.cells[0].outputs = [nbformat.v4.new_output('stream', name='stdout', text='x' * 4000)]
             notebook.cells[0].execution_count = 1
             nbformat.write(notebook, path)
             module.write_statistics(path)
             after = report.read_text()
             self.assertNotEqual(before, after)
-            self.assertIn(str(path.stat().st_size), after)
+            self.assertIn(module.format_size(path.stat().st_size), after)
             self.assertIn(hashlib.sha256(path.read_bytes()).hexdigest(), after)
-            self.assertIn('Цикломатическая', after)
+            self.assertIn('<table', after)
+            self.assertNotIn('байт', after)
+
+    def test_sizes_switch_to_megabytes_above_point_one_and_never_show_bytes(self):
+        module = self.helpers()
+        self.assertEqual(module.format_size(1_500_000), '1,50 МБ')
+        self.assertEqual(module.format_size(100_000), '100 КБ')
+        self.assertEqual(module.format_size(100_001), '0,10 МБ')
+        self.assertEqual(module.format_size(4_000), '4 КБ')
+        self.assertEqual(module.format_size(0), '0 КБ')
+
+    def test_html_is_escaped_and_obsolete_text_report_is_removed(self):
+        module = self.helpers()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'notebook <img>.ipynb'
+            nbformat.write(nbformat.v4.new_notebook(), path)
+            old = path.with_suffix('.stats.txt')
+            old.write_text('obsolete')
+            report = module.write_statistics(path)
+            html = report.read_text()
+            self.assertIn('notebook &lt;img&gt;.ipynb', html)
+            self.assertNotIn('<img>', html)
+            self.assertFalse(old.exists())
+            self.assertNotIn('<script src=', html)
+            self.assertIn('word-search', html)
 
     def test_word_frequencies_include_prose_and_one_text_representation_per_output(self):
         module = self.helpers()

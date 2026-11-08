@@ -101,12 +101,12 @@ class BuilderTests(unittest.TestCase):
     def test_writing_custom_artifact_creates_statistics(self):
         output = self.root / 'build/custom.ipynb'
         build_notebook(self.root, output)
-        report = output.with_suffix('.stats.txt')
+        report = output.with_suffix('.stats.html')
         self.assertTrue(report.is_file())
         text = report.read_text()
-        self.assertIn(str(output.stat().st_size), text)
-        self.assertIn('Соотношение Markdown/код', text)
-        self.assertIn('Цикломатическая', text)
+        self.assertIn('<table', text)
+        self.assertIn('Текст и код', text)
+        self.assertIn('Сложность кода', text)
 
     def test_refuses_to_overwrite_either_original(self):
         for name in ['solution.ipynb', 'solution.original.ipynb', 'notebooks/01.ipynb', 'config/build/project.json']:

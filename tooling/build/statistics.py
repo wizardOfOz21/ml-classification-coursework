@@ -11,6 +11,8 @@ import tokenize
 
 import nbformat
 
+from tooling.build.statistics_html import format_size, render_statistics
+
 
 class _Text(HTMLParser):
     def __init__(self, skip_code=False):
@@ -294,75 +296,8 @@ def write_statistics(notebook_path):
     notebook = nbformat.read(path, as_version=4)
     data = path.read_bytes()
     stats = notebook_statistics(notebook)
-    functions = stats['functions']
-    complexities = [f['complexity'] for f in functions]
-    ratio = lambda value: f'{value:.2f}:1' if value is not None else 'не определено — нет кода'
-    size = lambda value: f'{value} байт ({value / 1024:.2f} КиБ)'
-    lines = [
-        f'Статистика сборки {path.name}', '',
-        f'Размер файла: {size(len(data))}',
-        f'SHA-256: {hashlib.sha256(data).hexdigest()}', '',
-        'Ячейки и сохранённые результаты',
-        f"Всего ячеек: {stats['cells']}",
-        f"Markdown / код / raw: {stats['markdown_cells']} / {stats['code_cells']} / {stats['raw_cells']}",
-        f"Кодовых ячеек с номером выполнения: {stats['executed_cells']} из {stats['code_cells']}",
-        f"Блоков вывода: {stats['output_blocks']}; ошибок: {stats['error_outputs']}",
-        f"Изображений в выводах: {stats['images']}; вложений в ячейки: {stats['attachments']}",
-        f"Объём результатов в компактном JSON: {size(stats['outputs_bytes'])}",
-        'Данные о выполнении взяты из сохранённого состояния ячеек', '',
-        'Объём текста и кода',
-        f"Markdown: {stats['markdown_characters']} символов, {stats['markdown_lines']} строк, {size(stats['markdown_bytes'])}",
-        f"Код: {stats['code_characters']} символов, {stats['code_lines']} строк, {size(stats['code_bytes'])}",
-        f"Доли исходников по символам: текст {stats['text_share']:.1f}%, код {stats['code_share']:.1f}%",
-        f"Соотношение Markdown/код по символам: {ratio(stats['source_text_to_code'])}",
-        f"Текст после очистки разметки, приблизительно: {stats['readable_text_characters']} символов, {stats['text_words']} слов",
-        f"Соотношение очищенного текста/кода: {ratio(stats['readable_text_to_code'])}",
-        'Первое соотношение включает HTML-разметку Markdown-ячеек',
-        'Во втором убраны HTML-теги и основная Markdown-разметка; формулы считаются по их записи',
-        'Строковые литералы и комментарии Python входят в объём кода',
-        'Выводы ячеек, картинки и вложения в соотношении текста и кода не участвуют', '',
-        'Структура и сложность Python-кода',
-        f"Непустых строк кода: {stats['code_nonblank_lines']}; строк с комментариями: {stats['comment_lines']}",
-        f"Инструкций AST: {stats['statements']}; вызовов: {stats['calls']}; импортов: {stats['imports']}",
-        f"Функций def: {sum(not f['lambda'] for f in functions)}; lambda: {sum(f['lambda'] for f in functions)}; классов: {stats['classes']}",
-        f"Цикломатическая сложность верхнего уровня: {stats['module_complexity']}",
-        f"Средняя сложность функций и lambda: {sum(complexities) / len(complexities) if complexities else 0:.2f}",
-        f"Максимальная сложность функции: {max(complexities, default=0)}",
-        f"Максимальная вложенность управляющих блоков по AST: {stats['max_nesting']}", '',
-        'Наиболее сложные функции',
-    ]
-    for function in sorted(functions, key=lambda f: (-f['complexity'], -f['lines'], f['name']))[:10]:
-        lines.append(f"{function['name']}: сложность {function['complexity']}, строк {function['lines']}, вложенность {function['nesting']}; ячейка {function['cell']}, строка {function['line']}")
-    if not functions:
-        lines.append('Функций нет')
-    lines += ['', 'Номера ячеек указаны по порядку в notebook, начиная с 1; строки — внутри соответствующей ячейки', '', 'Как считается сложность',
-              'Оценочная цикломатическая сложность = 1 + число развилок в отдельной функции',
-              'Учитываются if и условные выражения, циклы, except, assert, and/or, генераторы и ветви match',
-              'Вложенные def/lambda считаются отдельно, без повторного включения в сложность внешней функции',
-              'Верхний уровень измеряется как одна последовательность всех кодовых ячеек',
-              'AST — синтаксическое дерево Python; глубина отражает вложенность управляющих блоков',
-              'Это статические показатели структуры кода, а не оценка качества анализа или скорости выполнения', '']
-    frequencies = stats['word_frequencies']
-    total = stats['frequency_total_words']
-    lines += [
-        'Частотность слов', '',
-        f"Всего употреблений: {total}; разных слов и обозначений: {len(frequencies)}",
-        f"В Markdown: {stats['frequency_markdown_words']}; в выводах ячеек: {stats['frequency_output_words']}",
-        'Регистр не учитывается; формы слов считаются отдельно; служебные слова сохранены',
-        'Код, формулы, URL, HTML-разметка и числовые значения исключены',
-        'Обозначения вроде AP и F2 учитываются, идентификаторы с подчёркиваниями исключены',
-        'У каждого вывода выбирается один текстовый формат: HTML, затем Markdown, затем plain text',
-        'Текст на картинках не распознаётся; повторные выводы таблиц учитываются при каждом показе',
-        'Доля — от всех употреблений в этой частотной таблице', '',
-    ]
-    width = max([len('Слово'), *(len(row['word']) for row in frequencies)])
-    lines.append(f"{'Слово':<{width}} | {'Markdown':>8} | {'Выводы':>8} | {'Всего':>8} | {'Доля, %':>8}")
-    lines.append('-' * (width + 47))
-    for row in frequencies:
-        lines.append(f"{row['word']:<{width}} | {row['markdown']:>8} | {row['outputs']:>8} | {row['total']:>8} | {100 * row['total'] / total:>8.3f}")
-    if not frequencies:
-        lines.append('Слов нет')
-    lines.append('')
-    report = path.with_suffix('.stats.txt')
-    report.write_text('\n'.join(lines), encoding='utf-8')
+    report = path.with_suffix('.stats.html')
+    report.write_text(render_statistics(
+        path.name, stats, len(data), hashlib.sha256(data).hexdigest()), encoding='utf-8')
+    path.with_suffix('.stats.txt').unlink(missing_ok=True)
     return report

@@ -14,7 +14,7 @@ class SubmissionExecutionTests(unittest.TestCase):
             target = root / 'tmp/build/submission/solution.ipynb'
             target.parent.mkdir(parents=True)
             target.write_bytes(b'previous successful submission')
-            statistics = target.with_suffix('.stats.txt')
+            statistics = target.with_suffix('.stats.html')
             statistics.write_text('previous statistics')
             notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell("raise ValueError('bad notebook')")])
             manifest = {'targets': {'submission': {'output': str(target.relative_to(root))}}}
@@ -40,9 +40,9 @@ class SubmissionExecutionTests(unittest.TestCase):
                  patch.object(runner, 'build_notebook', return_value=notebook), \
                  patch.object(runner.NotebookClient, 'execute', side_effect=executed):
                 runner.run()
-            report = target.with_suffix('.stats.txt')
+            report = target.with_suffix('.stats.html')
             self.assertTrue(report.is_file())
             text = report.read_text()
-            self.assertIn(str(target.stat().st_size), text)
+            self.assertNotIn('байт', text)
             self.assertIn(hashlib.sha256(target.read_bytes()).hexdigest(), text)
-            self.assertIn('Кодовых ячеек с номером выполнения: 1 из 1', text)
+            self.assertIn('1 из 1', text)
