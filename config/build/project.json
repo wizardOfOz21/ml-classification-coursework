@@ -91,7 +91,10 @@
   "cleared_output_cells": [
     3,
     5,
-    7
+    7,
+    29
   ],
-  "python_findings": true
+  "python_findings": true,
+  "code_edits": "config/build/code-edits.json",
+  "sequential_income_plots": true
 }

@@ -53,3 +53,37 @@ def analytical_snapshot(snapshot):
     if 'columns_info' in result['values']:
         result['values']['columns_info'] = result['values']['columns_info'].drop(columns=list(DESCRIPTION_COLUMNS), errors='ignore')
     return result
+
+
+def income_plot_snapshot(snapshot):
+    """Compare the same three income axes across the approved change of layout.
+
+    Only grouping, figure sizes and automatically placed tick labels are omitted
+    for these axes; scales, limits, labels and every plotted value stay checked.
+    """
+    titles = ['Распределение годового дохода', 'Доход — логарифмическая шкала',
+              'Доход — ящик с усами']
+    result = copy.deepcopy(snapshot)
+    axes = {}
+    plots = []
+    position = None
+    for figure in result['plots']:
+        income_axes = [ax for ax in figure['axes'] if ax['title'] in titles]
+        if not income_axes:
+            plots.append(figure)
+            continue
+        if len(income_axes) != len(figure['axes']):
+            raise ValueError('Income figure contains unexpected axes')
+        if position is None:
+            position = len(plots)
+        for ax in income_axes:
+            if ax['title'] in axes:
+                raise ValueError('Duplicate income axis')
+            ax.pop('xticks', None)
+            ax.pop('yticks', None)
+            axes[ax['title']] = ax
+    if set(axes) != set(titles):
+        raise ValueError('Missing income axes')
+    plots.insert(position, {'axes': [axes[title] for title in titles]})
+    result['plots'] = plots
+    return result

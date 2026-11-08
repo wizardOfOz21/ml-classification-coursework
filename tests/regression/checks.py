@@ -10,8 +10,13 @@ from tests.support.notebook_content import compare_legacy_content, legacy_notebo
 warnings.filterwarnings('ignore', category=nbformat.warnings.MissingIDFieldWarning)
 
 
-def layout_baseline(notebook, static_descriptions=False):
+def layout_baseline(notebook, static_descriptions=False, code_edits=()):
     adjusted = copy.deepcopy(notebook)
+    for edit in code_edits:
+        cell = adjusted.cells[edit['origin_cell']]
+        if cell.source != edit['before']:
+            raise ValueError('Approved code edit does not match the immutable baseline')
+        cell.source = edit['after']
     for cell in adjusted.cells:
         if cell.cell_type == 'code':
             cell.source = cell.source.replace('./data/credit_risk_dataset.csv', './dataset/credit_risk_dataset.csv')
@@ -39,7 +44,8 @@ def run_equivalence(root=ROOT, timeout=None):
     generated = nbformat.read(root / settings['generated'], as_version=4)
     legacy = legacy_notebook(generated)
     rebuilt = build_notebook(root)
-    structure = compare_structure(layout_baseline(original, manifest.get('static_description_tables', False)), legacy, compare_markdown=False)
+    code_edits = json.loads((root / manifest['code_edits']).read_text()) if 'code_edits' in manifest else []
+    structure = compare_structure(layout_baseline(original, manifest.get('static_description_tables', False), code_edits), legacy, compare_markdown=False)
     narrative_errors, stored_outputs = compare_legacy_content(original, generated, root, manifest)
     structure.extend(narrative_errors)
     structure.extend(extension_order_errors(generated))
@@ -64,6 +70,9 @@ def run_equivalence(root=ROOT, timeout=None):
             if (left, right) == ('original', 'legacy') and manifest.get('static_description_tables'):
                 from tests.support.presentation import analytical_snapshot
                 snapshots = [analytical_snapshot(snapshot) for snapshot in snapshots]
+            if (left, right) == ('original', 'legacy') and manifest.get('sequential_income_plots'):
+                from tests.support.presentation import income_plot_snapshot
+                snapshots = [income_plot_snapshot(snapshot) for snapshot in snapshots]
             differences.extend(f'{left}/{right}: {s}' for s in compare_values(*snapshots))
     if manifest.get('python_findings') and runs['original']['status'] == runs['generated']['status'] == 'passed':
         from tests.support.presentation import analytical_snapshot

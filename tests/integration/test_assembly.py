@@ -29,9 +29,12 @@ class AssemblyTests(unittest.TestCase):
         self.assertEqual(checked, 12)
 
     def test_real_sources_preserve_baseline_and_remove_local_loaders(self):
+        import json
         result = build_notebook()
         original = nbformat.read(ROOT / load_manifest()['baseline'], as_version=4)
-        self.assertEqual(compare_structure(layout_baseline(original, load_manifest().get('static_description_tables', False)), legacy_notebook(result), compare_markdown=False), [])
+        manifest = load_manifest()
+        code_edits = json.loads((ROOT / manifest['code_edits']).read_text()) if 'code_edits' in manifest else []
+        self.assertEqual(compare_structure(layout_baseline(original, manifest.get('static_description_tables', False), code_edits), legacy_notebook(result), compare_markdown=False), [])
         errors, outputs_preserved = compare_legacy_content(original, result, ROOT, load_manifest())
         self.assertEqual(errors, [])
         self.assertTrue(outputs_preserved)

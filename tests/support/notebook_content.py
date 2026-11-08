@@ -8,7 +8,7 @@ def compare_legacy_content(original, generated, root, manifest):
     errors = []
     indexed = {}
     counts = Counter()
-    for cell in generated.cells:
+    for cell in legacy_notebook(generated).cells:
         if 'origin_cell' in cell.metadata:
             index = cell.metadata['origin_cell']
             indexed[index] = cell
@@ -49,7 +49,25 @@ def legacy_notebook(notebook):
     import copy
     import nbformat
     result = nbformat.v4.new_notebook(metadata=copy.deepcopy(notebook.metadata))
-    result.cells = [copy.deepcopy(cell) for cell in notebook.cells if 'origin_cell' in cell.metadata]
+    parts = {}
+    result.cells = []
+    for cell in notebook.cells:
+        if 'origin_cell' not in cell.metadata:
+            continue
+        origin = cell.metadata['origin_cell']
+        part = cell.metadata.get('origin_part')
+        if part is None:
+            result.cells.append(copy.deepcopy(cell))
+        elif part == 0:
+            parts[origin] = (copy.deepcopy(cell), 1)
+            result.cells.append(parts[origin][0])
+        else:
+            head, expected_part = parts[origin]
+            if part != expected_part:
+                raise ValueError(f'Non-sequential legacy parts for cell {origin}')
+            head.source += '\n\n' + cell.source
+            head.outputs.extend(copy.deepcopy(cell.outputs))
+            parts[origin] = (head, expected_part + 1)
     return result
 
 
