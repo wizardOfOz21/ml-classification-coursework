@@ -67,6 +67,33 @@ class BuilderTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_notebook(self.root)
 
+    def test_dev_only_notes_are_omitted_and_loaders_are_expanded(self):
+        part = nbformat.read(self.root / 'notebooks/01.ipynb', as_version=4)
+        part.cells.insert(0, nbformat.v4.new_markdown_cell(
+            'Developer note that must not ship', metadata={'tags': ['dev-only']}))
+        part.cells[-1].metadata['tags'] = ['dev-only', 'keep-this-tag']
+        nbformat.write(part, self.root / 'notebooks/01.ipynb')
+        parent = nbformat.v4.new_notebook(cells=[
+            nbformat.v4.new_code_cell("raise RuntimeError('loader must not ship')",
+                metadata={'tags': ['dev-only'], 'modular': {'include': 'notebooks/01.ipynb'}}),
+        ])
+        nbformat.write(parent, self.root / 'notebooks/root.ipynb')
+        manifest_path = self.root / 'config/build/project.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['sections'] = [{'file': 'notebooks/root.ipynb'}, {'file': 'notebooks/02.ipynb'}]
+        manifest_path.write_text(json.dumps(manifest))
+        result = build_notebook(self.root)
+        self.assertEqual(len(result.cells), 3)
+        namespace = {}
+        for cell in result.cells:
+            self.assertNotIn('dev-only', cell.metadata.get('tags', []))
+            self.assertNotIn('Developer note', cell.source)
+            self.assertNotIn('loader must not ship', cell.source)
+            if cell.cell_type == 'code':
+                exec(cell.source, namespace)
+        self.assertEqual(namespace['last'], 6)
+        self.assertIn('keep-this-tag', result.cells[1].metadata['tags'])
+
     def test_edited_module_is_used_in_next_build(self):
         (self.root / 'src/helpers.py').write_text('def f(value):\n    return value * offset\n')
         self.assertIn('return value * offset', build_notebook(self.root).cells[1].source)

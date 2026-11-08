@@ -84,6 +84,8 @@ def build_notebook(root=ROOT, output=None):
                     raise ValueError('A cell cannot include a notebook and splice Python together')
                 append_section(transport['include'])
                 continue
+            if 'dev-only' in cell.metadata.get('tags', []) and not transport.get('splices'):
+                continue
             for splice in transport.get('splices', []):
                 module = project_path(root, splice['path'])
                 if module in seen_modules:
@@ -92,6 +94,12 @@ def build_notebook(root=ROOT, output=None):
                     raise ValueError(f'Missing or ambiguous placeholder for {module}')
                 cell.source = cell.source.replace(splice['placeholder'], module.read_text(encoding='utf-8'))
                 seen_modules.add(module)
+            if 'dev-only' in cell.metadata.get('tags', []):
+                tags = [tag for tag in cell.metadata['tags'] if tag != 'dev-only']
+                if tags:
+                    cell.metadata['tags'] = tags
+                else:
+                    cell.metadata.pop('tags')
             notebook.cells.append(cell)
     for section in manifest['sections']:
         append_section(section['file'])
