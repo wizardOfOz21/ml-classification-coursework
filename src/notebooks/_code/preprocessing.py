@@ -1,4 +1,4 @@
-"""Предобработка, обучаемая только через fit соответствующего Pipeline."""
+'Предобработка, обучаемая только через fit соответствующего Pipeline'
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -17,7 +17,7 @@ FEATURES = NUMERICAL_FEATURES + NOMINAL_FEATURES + ORDINAL_FEATURES
 
 
 def make_preprocessor():
-    """Каждый вызов создаёт новый, ещё не обученный преобразователь."""
+    'Каждый вызов создаёт новый, ещё не обученный преобразователь'
     return ColumnTransformer([
         ('numerical', Pipeline([
             ('impute', SimpleImputer(strategy='median', add_indicator=True, keep_empty_features=True)),
@@ -35,7 +35,7 @@ def make_preprocessor():
 
 
 def prepare_applications(applications):
-    """Проверка новых заявок; строки не удаляем, целевую переменную не принимаем."""
+    'Проверка новых заявок; строки не удаляем, целевую переменную не принимаем'
     if not isinstance(applications, pd.DataFrame):
         raise TypeError('Ожидается DataFrame с признаками заявок')
     if not applications.columns.is_unique or set(applications.columns) != set(FEATURES):

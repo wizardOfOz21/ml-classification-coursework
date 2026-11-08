@@ -24,7 +24,8 @@ def compare_legacy_content(original, generated, root, manifest):
             continue
         if cell.cell_type != original_cell.cell_type:
             errors.append(f'Cell type changed: {index}')
-        if cell.get('outputs') != original_cell.get('outputs'):
+        expected_outputs = [] if index in manifest.get('cleared_output_cells', []) else original_cell.get('outputs')
+        if cell.get('outputs') != expected_outputs:
             stored_outputs = False
         if original_cell.cell_type == 'markdown':
             text = original_cell.source

@@ -1,4 +1,4 @@
-"""Небольшая фиксированная сетка; test здесь не используется."""
+'Небольшая фиксированная сетка; test здесь не используется'
 from sklearn.base import clone
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
@@ -41,7 +41,7 @@ frozen_decision = {
 }
 display(validation_comparison.round(4))
 display(validation_threshold_comparison.round(4))
-display(Markdown(f'Выбрана **{selected_model_name}**; AP на validation = **{validation_comparison.iloc[0]["AP"]:.4f}**. Зафиксирован порог **{selected_threshold:.4f}**.'))
+display(Markdown(f'Выбрана **{selected_model_name}**; AP на validation = **{validation_comparison.iloc[0]["AP"]:.4f}** Зафиксирован порог **{selected_threshold:.4f}**'))
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 validation_comparison['AP'].sort_values().plot.barh(ax=axes[0], color='#4682a9')

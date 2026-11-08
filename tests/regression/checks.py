@@ -10,11 +10,14 @@ from tests.support.notebook_content import compare_legacy_content, legacy_notebo
 warnings.filterwarnings('ignore', category=nbformat.warnings.MissingIDFieldWarning)
 
 
-def layout_baseline(notebook):
+def layout_baseline(notebook, static_descriptions=False):
     adjusted = copy.deepcopy(notebook)
     for cell in adjusted.cells:
         if cell.cell_type == 'code':
             cell.source = cell.source.replace('./data/credit_risk_dataset.csv', './dataset/credit_risk_dataset.csv')
+    if static_descriptions:
+        from tests.support.presentation import remove_description_code
+        adjusted = remove_description_code(adjusted)
     return adjusted
 
 
@@ -36,7 +39,7 @@ def run_equivalence(root=ROOT, timeout=None):
     generated = nbformat.read(root / settings['generated'], as_version=4)
     legacy = legacy_notebook(generated)
     rebuilt = build_notebook(root)
-    structure = compare_structure(layout_baseline(original), legacy, compare_markdown=False)
+    structure = compare_structure(layout_baseline(original, manifest.get('static_description_tables', False)), legacy, compare_markdown=False)
     narrative_errors, stored_outputs = compare_legacy_content(original, generated, root, manifest)
     structure.extend(narrative_errors)
     structure.extend(extension_order_errors(generated))
@@ -57,7 +60,11 @@ def run_equivalence(root=ROOT, timeout=None):
     differences = []
     for left, right in pairs:
         if all(runs[name]['status'] == 'passed' for name in [left, right]):
-            differences.extend(f'{left}/{right}: {s}' for s in compare_values(runs[left]['snapshot'], runs[right]['snapshot']))
+            snapshots = [runs[name]['snapshot'] for name in (left, right)]
+            if (left, right) == ('original', 'legacy') and manifest.get('static_description_tables'):
+                from tests.support.presentation import analytical_snapshot
+                snapshots = [analytical_snapshot(snapshot) for snapshot in snapshots]
+            differences.extend(f'{left}/{right}: {s}' for s in compare_values(*snapshots))
     # Numerical end-to-end contracts: assert on outputs, not saved prose.
     if runs['generated']['status'] == 'passed':
         from tests.support.modeling_results import check_modeling_results

@@ -14,7 +14,6 @@ def domain(column):
 
 
 columns_info = pd.DataFrame(index=data.columns)
-columns_info['Описание из источника'] = columns_info.index.map(source_descriptions)
 columns_info['Тип в данных'] = data.dtypes.astype(str)
 columns_info['Домен'] = columns_info.index.map(domain)
 

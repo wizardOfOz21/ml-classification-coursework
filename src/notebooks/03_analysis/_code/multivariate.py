@@ -1,4 +1,4 @@
-"""Описательные проверки оставшихся гипотез — исключительно train."""
+'Описательные проверки оставшихся гипотез — исключительно train'
 from IPython.display import Markdown
 
 analysis_train = train.copy()

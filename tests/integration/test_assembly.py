@@ -10,7 +10,7 @@ class AssemblyTests(unittest.TestCase):
     def test_real_sources_preserve_baseline_and_remove_local_loaders(self):
         result = build_notebook()
         original = nbformat.read(ROOT / load_manifest()['baseline'], as_version=4)
-        self.assertEqual(compare_structure(layout_baseline(original), legacy_notebook(result), compare_markdown=False), [])
+        self.assertEqual(compare_structure(layout_baseline(original, load_manifest().get('static_description_tables', False)), legacy_notebook(result), compare_markdown=False), [])
         errors, outputs_preserved = compare_legacy_content(original, result, ROOT, load_manifest())
         self.assertEqual(errors, [])
         self.assertTrue(outputs_preserved)
@@ -67,7 +67,30 @@ assert namespace['x'] == 4
                 exec(cell.source, namespace)
         self.assertIn('data_raw', namespace, 'Stage 1 must load its inputs before delegating analysis')
         self.assertEqual(namespace['data_raw'].shape, (32581, 12))
-        self.assertEqual(set(namespace['source_descriptions']), set(namespace['data_raw'].columns))
+        self.assertNotIn('source_descriptions', namespace)
+        self.assertNotIn('interpretations', namespace)
+        from html.parser import HTMLParser
+        class Fields(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.in_code = False
+                self.names = []
+            def handle_starttag(self, tag, attrs):
+                if tag == 'code':
+                    self.in_code = True
+            def handle_endtag(self, tag):
+                if tag == 'code':
+                    self.in_code = False
+            def handle_data(self, text):
+                if self.in_code:
+                    self.names.append(text)
+        source_table = Fields()
+        source_table.feed('\n'.join(c.source for c in notebook.cells if c.cell_type == 'markdown'))
+        self.assertEqual(set(source_table.names), set(namespace['data_raw'].columns))
+        preliminary = nbformat.read(ROOT / 'src/notebooks/01_problem/01_preliminary.ipynb', as_version=4)
+        explanations = Fields()
+        explanations.feed('\n'.join(c.source for c in preliminary.cells if c.cell_type == 'markdown'))
+        self.assertEqual(set(explanations.names), set(namespace['data_raw'].columns))
         self.assertNotIn('columns_info', namespace)
         self.assertNotIn('train', namespace)
         text = '\n'.join(cell.source for cell in notebook.cells if cell.cell_type == 'markdown')

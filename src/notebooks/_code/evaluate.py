@@ -1,4 +1,4 @@
-"""Одна итоговая оценка зафиксированного решения на test."""
+'Одна итоговая оценка зафиксированного решения на test'
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, roc_curve
 from sklearn.calibration import calibration_curve
 
@@ -59,8 +59,8 @@ plt.show()
 
 display(Markdown(
     f'На test ({len(test):,} записей) AP = **{test_metrics.iloc[1]["AP"]:.4f}**, '
-    f'ROC-AUC = **{test_metrics.iloc[1]["ROC-AUC"]:.4f}**. '
+    f'ROC-AUC = **{test_metrics.iloc[1]["ROC-AUC"]:.4f}** '
     f'При зафиксированном пороге обнаружено **{tp} из {tp + fn}** дефолтов; '
-    f'пропущено **{fn}**, ложных тревог — **{fp}** из {tn + fp} кредитов без дефолта. '
-    'После просмотра test решение не перенастраиваем.'
+    f'пропущено **{fn}**, ложных тревог — **{fp}** из {tn + fp} кредитов без дефолта '
+    'После просмотра test решение не перенастраиваем'
 ))

@@ -103,5 +103,11 @@
   "extensions": {
     "first_new_stage": "src/notebooks/03_analysis/04_model_choice.ipynb",
     "description": "Содержательное дополнение после неизменённого EDA; original сравнивается только с legacy-ячейками."
-  }
+  },
+  "static_description_tables": true,
+  "cleared_output_cells": [
+    3,
+    5,
+    7
+  ]
 }
