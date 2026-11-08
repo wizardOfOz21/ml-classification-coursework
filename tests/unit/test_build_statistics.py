@@ -79,3 +79,51 @@ if ready:
             self.assertIn(str(path.stat().st_size), after)
             self.assertIn(hashlib.sha256(path.read_bytes()).hexdigest(), after)
             self.assertIn('Цикломатическая', after)
+
+    def test_word_frequencies_include_prose_and_one_text_representation_per_output(self):
+        module = self.helpers()
+        fence = chr(96) * 3
+        inline = chr(96)
+        markdown = (
+            '# Анализ\nДефолт дефолт, ДЕФОЛТЫ и AP F2\n'
+            + inline + 'hidden_code' + inline + ' $TP$ https://example.com/ignored\n'
+            + fence + "python\nprint('исключить')\n" + fence + '\n'
+            + fence + 'text\nУсловие задания 12345\n' + fence
+        )
+        output = nbformat.v4.new_output('display_data', data={
+            'text/html': '<style>.css_words {color:red}</style><table><tr><td>ДЕФОЛТ</td><td>риск</td><td>loan_status</td></tr></table>',
+            'text/plain': 'дубликат',
+        })
+        image = nbformat.v4.new_output('display_data', data={'image/png': 'AAAA', 'text/plain': 'картинка'})
+        rendered = nbformat.v4.new_output('display_data', data={'text/markdown': '**Риск** риск', 'text/plain': 'дубликат'})
+        notebook = nbformat.v4.new_notebook(cells=[
+            nbformat.v4.new_markdown_cell(markdown),
+            nbformat.v4.new_code_cell("print('исключить')", outputs=[output, image, rendered]),
+        ])
+        result = module.notebook_statistics(notebook)
+        self.assertIn('word_frequencies', result, 'Word frequencies have not been implemented')
+        words = {row['word']: row for row in result['word_frequencies']}
+        self.assertEqual(words['дефолт'], {'word': 'дефолт', 'markdown': 2, 'outputs': 1, 'total': 3})
+        self.assertEqual(words['дефолты']['total'], 1)
+        self.assertEqual(words['риск']['total'], 3)
+        self.assertIn('f2', words)
+        self.assertIn('условие', words)
+        self.assertIn('задания', words)
+        for excluded in ['исключить', 'hidden', 'code', 'tp', 'example', 'ignored', 'дубликат', 'картинка', 'css', 'loan', 'status']:
+            self.assertNotIn(excluded, words)
+        self.assertEqual(result['frequency_total_words'], sum(row['total'] for row in words.values()))
+        self.assertEqual(result['word_frequencies'], sorted(words.values(), key=lambda row: (-row['total'], row['word'])))
+
+    def test_word_frequency_report_contains_all_rows_and_handles_empty_text(self):
+        module = self.helpers()
+        notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_markdown_cell('Кредит кредит риск')])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'words.ipynb'
+            nbformat.write(notebook, path)
+            report = module.write_statistics(path).read_text()
+            self.assertIn('Частотность слов', report)
+            self.assertIn('кредит', report)
+            self.assertIn('риск', report)
+        empty = module.notebook_statistics(nbformat.v4.new_notebook())
+        self.assertEqual(empty['word_frequencies'], [])
+        self.assertEqual(empty['frequency_total_words'], 0)

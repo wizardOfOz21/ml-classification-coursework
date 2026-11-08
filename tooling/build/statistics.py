@@ -1,5 +1,6 @@
 """Static statistics for the actual serialized notebook artifact, without dependencies."""
 import ast
+from collections import Counter
 import hashlib
 from html.parser import HTMLParser
 import io
@@ -12,19 +13,20 @@ import nbformat
 
 
 class _Text(HTMLParser):
-    def __init__(self):
+    def __init__(self, skip_code=False):
         super().__init__(convert_charrefs=True)
         self.parts = []
         self.ignored = 0
+        self.ignored_tags = {'script', 'style'} | ({'pre', 'code'} if skip_code else set())
 
     def handle_starttag(self, tag, attrs):
-        if tag in {'script', 'style'}:
+        if tag in self.ignored_tags:
             self.ignored += 1
         if tag == 'img' and not self.ignored:
             self.parts.append(dict(attrs).get('alt', ''))
 
     def handle_endtag(self, tag):
-        if tag in {'script', 'style'}:
+        if tag in self.ignored_tags:
             self.ignored = max(0, self.ignored - 1)
 
     def handle_data(self, data):
@@ -32,9 +34,9 @@ class _Text(HTMLParser):
             self.parts.append(data)
 
 
-def readable_text(source):
+def readable_text(source, skip_code=False):
     """Approximate prose volume, not a full Markdown/LaTeX renderer."""
-    parser = _Text()
+    parser = _Text(skip_code=skip_code)
     parser.feed(source)
     parser.close()
     text = ' '.join(parser.parts)
@@ -44,6 +46,70 @@ def readable_text(source):
     text = re.sub(r'(?m)^\s*\|?\s*:?-{3,}.*$', '', text)
     text = re.sub(r'[`*_~|]', '', text)
     return ' '.join(text.split())
+
+
+def _without_fences(source):
+    lines = []
+    fence = None
+    for line in source.splitlines():
+        if fence:
+            stripped = line.lstrip(' \t')
+            ending = re.match(re.escape(fence[0]) + '+', stripped)
+            if ending and len(ending.group()) >= fence[1] and not stripped[ending.end():].strip():
+                fence = None
+            elif fence[2]:
+                lines.append(line)
+            continue
+        opening = re.match(r'^[ \t]{0,3}(' + chr(96) + r'{3,}|~{3,})(.*)$', line)
+        if opening:
+            language = opening.group(2).strip().split()
+            plaintext = bool(language) and language[0].casefold() in {'text', 'plaintext'}
+            fence = (opening.group(1)[0], len(opening.group(1)), plaintext)
+            lines.append('')
+        else:
+            lines.append(line)
+    return '\n'.join(lines)
+
+
+def _count_words(source):
+    source = _without_fences(source)
+    source = re.sub(r'(?P<ticks>' + chr(96) + r'+).*?(?P=ticks)', ' ', source)
+    source = re.sub(r'\$\$[\s\S]*?\$\$|\$[^$\n]+\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]', ' ', source)
+    source = re.sub(r'https?://[^\s<>()]+', ' ', source)
+    text = readable_text(source, skip_code=True)
+    # Whole tokens only: keep F2 and one-hot, but do not split loan_status into two words.
+    tokens = re.findall(r"(?<!\w)[^\W_]+(?:[-’'][^\W_]+)*(?!\w)", text)
+    return Counter(word.replace('’', "'").casefold() for word in tokens if word[0].isalpha())
+
+
+def word_frequencies(notebook):
+    markdown = Counter()
+    outputs = Counter()
+    for cell in notebook.cells:
+        if cell.cell_type == 'markdown':
+            markdown.update(_count_words(cell.source))
+        elif cell.cell_type == 'code':
+            for output in cell.get('outputs', []):
+                data = output.get('data', {})
+                if any(mime.startswith('image/') for mime in data) or 'text/latex' in data:
+                    continue
+                source = ''
+                for mime in ('text/html', 'text/markdown', 'text/plain'):
+                    if mime in data:
+                        source = data[mime]
+                        break
+                else:
+                    if output.output_type == 'stream' and output.get('name') == 'stdout':
+                        source = output.get('text', '')
+                if isinstance(source, list):
+                    source = ''.join(source)
+                outputs.update(_count_words(source))
+    rows = [
+        {'word': word, 'markdown': markdown[word], 'outputs': outputs[word],
+         'total': markdown[word] + outputs[word]}
+        for word in markdown.keys() | outputs.keys()
+    ]
+    return sorted(rows, key=lambda row: (-row['total'], row['word']))
 
 
 class _Decisions(ast.NodeVisitor):
@@ -190,6 +256,7 @@ def notebook_statistics(notebook):
     clean_chars = sum(map(len, prose))
     output_cells = [cell for cell in notebook.cells if cell.cell_type == 'code']
     output_blocks = [output for cell in output_cells for output in cell.get('outputs', [])]
+    frequencies = word_frequencies(notebook)
     return {
         'cells': len(notebook.cells), 'markdown_cells': len(markdown), 'code_cells': len(code),
         'raw_cells': sum(cell.cell_type == 'raw' for cell in notebook.cells),
@@ -202,6 +269,10 @@ def notebook_statistics(notebook):
         'text_share': 100 * text_chars / (text_chars + code_chars) if text_chars + code_chars else 0,
         'code_share': 100 * code_chars / (text_chars + code_chars) if text_chars + code_chars else 0,
         'text_words': sum(len(re.findall(r'[^\W\d_]+(?:[-’\'][^\W\d_]+)*', text)) for text in prose),
+        'word_frequencies': frequencies,
+        'frequency_markdown_words': sum(row['markdown'] for row in frequencies),
+        'frequency_output_words': sum(row['outputs'] for row in frequencies),
+        'frequency_total_words': sum(row['total'] for row in frequencies),
         'markdown_lines': sum(len(s.splitlines()) for s in markdown),
         'code_lines': sum(len(s.splitlines()) for s in code),
         'code_nonblank_lines': sum(bool(line.strip()) for s in code for line in s.splitlines()),
@@ -271,6 +342,27 @@ def write_statistics(notebook_path):
               'Верхний уровень измеряется как одна последовательность всех кодовых ячеек',
               'AST — синтаксическое дерево Python; глубина отражает вложенность управляющих блоков',
               'Это статические показатели структуры кода, а не оценка качества анализа или скорости выполнения', '']
+    frequencies = stats['word_frequencies']
+    total = stats['frequency_total_words']
+    lines += [
+        'Частотность слов', '',
+        f"Всего употреблений: {total}; разных слов и обозначений: {len(frequencies)}",
+        f"В Markdown: {stats['frequency_markdown_words']}; в выводах ячеек: {stats['frequency_output_words']}",
+        'Регистр не учитывается; формы слов считаются отдельно; служебные слова сохранены',
+        'Код, формулы, URL, HTML-разметка и числовые значения исключены',
+        'Обозначения вроде AP и F2 учитываются, идентификаторы с подчёркиваниями исключены',
+        'У каждого вывода выбирается один текстовый формат: HTML, затем Markdown, затем plain text',
+        'Текст на картинках не распознаётся; повторные выводы таблиц учитываются при каждом показе',
+        'Доля — от всех употреблений в этой частотной таблице', '',
+    ]
+    width = max([len('Слово'), *(len(row['word']) for row in frequencies)])
+    lines.append(f"{'Слово':<{width}} | {'Markdown':>8} | {'Выводы':>8} | {'Всего':>8} | {'Доля, %':>8}")
+    lines.append('-' * (width + 47))
+    for row in frequencies:
+        lines.append(f"{row['word']:<{width}} | {row['markdown']:>8} | {row['outputs']:>8} | {row['total']:>8} | {100 * row['total'] / total:>8.3f}")
+    if not frequencies:
+        lines.append('Слов нет')
+    lines.append('')
     report = path.with_suffix('.stats.txt')
     report.write_text('\n'.join(lines), encoding='utf-8')
     return report
