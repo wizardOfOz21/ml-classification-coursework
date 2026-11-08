@@ -35,6 +35,12 @@ def check_modeling_results(values):
         assert values['bootstrap_metrics'].shape[0] == 300
         assert values['example_predictions'].shape == (3, 2)
         assert values['final_conclusions'].shape[1] == 2
+        findings = values['conclusions']
+        assert isinstance(findings, __import__('pandas').DataFrame)
+        assert findings.index.is_unique
+        assert set(findings['Метка']).issubset({'', 'new', 'removed'})
+        assert findings['Выводы'].is_unique
+        assert not findings['Метка'].eq('removed').any()
     except (AssertionError, KeyError, IndexError, ValueError) as error:
         errors.append(f'Modeling output contract failed: {type(error).__name__}: {error}')
     return errors

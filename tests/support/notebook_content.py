@@ -58,6 +58,6 @@ def extension_order_errors(notebook):
     if not positions:
         return ['No legacy cells']
     return ['New executable code interleaves the immutable EDA'] if any(
-        cell.cell_type == 'code' and 'origin_cell' not in cell.metadata
+        cell.cell_type == 'code' and 'origin_cell' not in cell.metadata and cell.metadata.get('role') != 'findings'
         for cell in notebook.cells[:max(positions)]
     ) else []

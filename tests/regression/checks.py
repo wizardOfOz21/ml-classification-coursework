@@ -65,6 +65,15 @@ def run_equivalence(root=ROOT, timeout=None):
                 from tests.support.presentation import analytical_snapshot
                 snapshots = [analytical_snapshot(snapshot) for snapshot in snapshots]
             differences.extend(f'{left}/{right}: {s}' for s in compare_values(*snapshots))
+    if manifest.get('python_findings') and runs['original']['status'] == runs['generated']['status'] == 'passed':
+        from tests.support.presentation import analytical_snapshot
+        baseline_values = analytical_snapshot(runs['original']['snapshot'])['values']
+        generated_values = runs['generated']['snapshot']['values']
+        names = ['data_raw', 'data', 'columns_info', 'train', 'validation', 'test',
+                 'association_matrix', 'pearson_matrix', 'nmi_estimates', 'kruskal_effects']
+        for name in names:
+            differences.extend(f'original/generated analysis {name}: {error}' for error in
+                               compare_values(baseline_values[name], generated_values[name]))
     # Numerical end-to-end contracts: assert on outputs, not saved prose.
     if runs['generated']['status'] == 'passed':
         from tests.support.modeling_results import check_modeling_results

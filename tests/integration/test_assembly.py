@@ -97,3 +97,24 @@ assert namespace['x'] == 4
         activity = text.split('**Что делаем**', 1)[1].split('### Исходное задание', 1)[0]
         self.assertNotIn('бинарной классификации', activity)
         self.assertIn('Критерий оценивания', text)
+
+    def test_findings_table_starts_empty_and_updates_stay_in_analysis(self):
+        notebook = nbformat.read(ROOT / 'src/notebooks/03_analysis/index.ipynb', as_version=4)
+        namespace = {'display': lambda *args, **kwargs: None}
+        for cell in notebook.cells:
+            transport = cell.metadata.get('modular', {})
+            if 'include' in transport:
+                break
+            if cell.cell_type == 'code' and not transport.get('development_only'):
+                exec(cell.source, namespace)
+        self.assertTrue(namespace['conclusions'].empty)
+        self.assertEqual(list(namespace['conclusions'].columns), ['Выводы', 'Решения', 'Метка'])
+        updates = []
+        for path in (ROOT / 'src/notebooks/03_analysis').rglob('*.ipynb'):
+            for cell in nbformat.read(path, as_version=4).cells:
+                if cell.cell_type == 'markdown':
+                    self.assertNotIn('<table', cell.source)
+                elif cell.metadata.get('role') == 'findings':
+                    updates.append(cell)
+        self.assertGreaterEqual(len(updates), 19)
+        self.assertTrue(any('only_new=True' in cell.source for cell in updates))
