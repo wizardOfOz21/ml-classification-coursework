@@ -1,5 +1,7 @@
 """Analytical behavior that would fail with leakage, lost order or a test-tuned threshold."""
 import runpy
+import ast
+import nbformat
 import unittest
 from pathlib import Path
 import numpy as np
@@ -12,10 +14,24 @@ def load_helpers(name):
     return runpy.run_path(str(path)) if path.exists() else {}
 
 
+def load_notebook_helpers(relative, function):
+    path = ROOT / 'src/notebooks' / relative
+    notebook = nbformat.read(path, as_version=4)
+    for cell in notebook.cells:
+        if cell.cell_type != 'code':
+            continue
+        if any(isinstance(node, ast.FunctionDef) and node.name == function
+               for node in ast.parse(cell.source).body):
+            namespace = {}
+            exec(compile(cell.source, str(path), 'exec'), namespace)
+            return namespace
+    raise AssertionError(f'{function} is missing from {path}')
+
+
 class ModelingTests(unittest.TestCase):
     def setUp(self):
         self.prep = load_helpers('preprocessing.py')
-        self.select = load_helpers('selection.py')
+        self.select = load_notebook_helpers('05_training.ipynb', 'select_f2_threshold')
 
     def test_preprocessing_is_train_fitted_and_grade_order_is_preserved(self):
         self.assertIn('make_preprocessor', self.prep, 'Train-only preprocessing is not implemented')
