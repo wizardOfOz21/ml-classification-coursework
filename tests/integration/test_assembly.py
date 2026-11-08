@@ -7,6 +7,27 @@ from tests.support.comparison import compare_structure
 from tests.support.notebook_content import compare_legacy_content, legacy_notebook, extension_order_errors
 
 class AssemblyTests(unittest.TestCase):
+    def test_univariate_headings_stay_with_their_feature(self):
+        import re
+        folder = ROOT / 'src/notebooks/03_analysis/01_basic_eda/03_univariate'
+        features = re.compile(r'\b(?:person|loan|cb_person)_[a-z_]+\b')
+        checked = 0
+        for path in sorted(folder.glob('*.ipynb')):
+            notebook = nbformat.read(path, as_version=4)
+            owner = features.findall(notebook.cells[0].source.splitlines()[0])
+            if not owner:
+                continue  # Shared introduction and cumulative findings
+            self.assertEqual(len(owner), 1, path.name)
+            checked += 1
+            for cell in notebook.cells:
+                if cell.cell_type != 'markdown':
+                    continue
+                for line in cell.source.splitlines():
+                    if line.startswith('#') or line.startswith('**Выводы'):
+                        self.assertLessEqual(set(features.findall(line)), set(owner),
+                                             f'{path.name}: heading belongs to another feature: {line}')
+        self.assertEqual(checked, 12)
+
     def test_real_sources_preserve_baseline_and_remove_local_loaders(self):
         result = build_notebook()
         original = nbformat.read(ROOT / load_manifest()['baseline'], as_version=4)
