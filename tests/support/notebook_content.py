@@ -35,3 +35,22 @@ def compare_legacy_content(original, generated, root, manifest):
             if cell.get('attachments', {}) != original_cell.get('attachments', {}):
                 errors.append(f'Attachment changed: legacy cell {index}')
     return errors, stored_outputs
+
+
+def legacy_notebook(notebook):
+    """Only the original cells, in execution order; new analysis follows them."""
+    import copy
+    import nbformat
+    result = nbformat.v4.new_notebook(metadata=copy.deepcopy(notebook.metadata))
+    result.cells = [copy.deepcopy(cell) for cell in notebook.cells if 'origin_cell' in cell.metadata]
+    return result
+
+
+def extension_order_errors(notebook):
+    positions = [i for i, cell in enumerate(notebook.cells) if 'origin_cell' in cell.metadata]
+    if not positions:
+        return ['No legacy cells']
+    return ['New executable code interleaves the immutable EDA'] if any(
+        cell.cell_type == 'code' and 'origin_cell' not in cell.metadata
+        for cell in notebook.cells[:max(positions)]
+    ) else []

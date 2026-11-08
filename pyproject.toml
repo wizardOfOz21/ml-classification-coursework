@@ -8,6 +8,7 @@ dependencies = [
   "numpy==2.5.4",
   "scipy==1.18.1",
   "scikit-learn==1.9.1",
+  "threadpoolctl==3.7.0",
   "matplotlib==3.11.2",
   "seaborn==0.13.2",
   "ipython==9.18.0"

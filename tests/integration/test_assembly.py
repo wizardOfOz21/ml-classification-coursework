@@ -4,16 +4,17 @@ from tooling.common import ROOT, load_manifest
 from tooling.build.builder import build_notebook
 from tests.regression.checks import layout_baseline
 from tests.support.comparison import compare_structure
-from tests.support.notebook_content import compare_legacy_content
+from tests.support.notebook_content import compare_legacy_content, legacy_notebook, extension_order_errors
 
 class AssemblyTests(unittest.TestCase):
     def test_real_sources_preserve_baseline_and_remove_local_loaders(self):
         result = build_notebook()
         original = nbformat.read(ROOT / load_manifest()['baseline'], as_version=4)
-        self.assertEqual(compare_structure(layout_baseline(original), result, compare_markdown=False), [])
+        self.assertEqual(compare_structure(layout_baseline(original), legacy_notebook(result), compare_markdown=False), [])
         errors, outputs_preserved = compare_legacy_content(original, result, ROOT, load_manifest())
         self.assertEqual(errors, [])
         self.assertTrue(outputs_preserved)
+        self.assertEqual(extension_order_errors(result), [])
         for cell in result.cells:
             if cell.cell_type == 'code':
                 self.assertNotIn("exec(compile(__import__('pathlib')", cell.source)
