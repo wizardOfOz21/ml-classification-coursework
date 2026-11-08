@@ -62,7 +62,7 @@
     },
     {
       "file": "src/notebooks/03_analysis/index.ipynb",
-      "title": "3 Анализ, выбор модели и разбиение данных"
+      "title": "3 Анализ данных и выбор спецификации модели"
     },
     {
       "file": "src/notebooks/04_preprocessing.ipynb",
