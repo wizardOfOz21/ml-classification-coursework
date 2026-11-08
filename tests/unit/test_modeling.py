@@ -1,5 +1,4 @@
 """Analytical behavior that would fail with leakage, lost order or a test-tuned threshold."""
-import runpy
 import ast
 import nbformat
 import unittest
@@ -7,11 +6,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from tooling.common import ROOT
+from tooling.build.builder import build_notebook
 
 
-def load_helpers(name):
-    path = ROOT / 'src/notebooks/_code' / name
-    return runpy.run_path(str(path)) if path.exists() else {}
+def load_preprocessing_helpers():
+    namespace = {}
+    for cell in build_notebook().cells:
+        if cell.cell_type == 'code' and cell.metadata.get('role') == 'preprocessing-definition':
+            exec(cell.source, namespace)
+    return namespace
 
 
 def load_notebook_helpers(relative, function):
@@ -30,7 +33,7 @@ def load_notebook_helpers(relative, function):
 
 class ModelingTests(unittest.TestCase):
     def setUp(self):
-        self.prep = load_helpers('preprocessing.py')
+        self.prep = load_preprocessing_helpers()
         self.select = load_notebook_helpers('05_training.ipynb', 'select_f2_threshold')
 
     def test_preprocessing_is_train_fitted_and_grade_order_is_preserved(self):
@@ -99,7 +102,7 @@ class ModelingTests(unittest.TestCase):
         import matplotlib.pyplot as plt
         from sklearn.pipeline import Pipeline
         from threadpoolctl import threadpool_limits
-        source = ROOT / 'src/notebooks/_code/train_models.py'
+        notebook = nbformat.read(ROOT / 'src/notebooks/05_training.ipynb', as_version=4)
         frame = pd.read_csv(ROOT / 'dataset/credit_risk_dataset.csv').head(80)
         x = frame.drop(columns='loan_status')
         y = frame['loan_status'].astype(int)
@@ -112,7 +115,10 @@ class ModelingTests(unittest.TestCase):
         }
         from unittest.mock import patch
         with threadpool_limits(limits=1), patch.object(plt, "show"):
-            result = runpy.run_path(str(source), init_globals=namespace)
+            for cell in notebook.cells:
+                if cell.cell_type == 'code' and cell.metadata.get('role') == 'training':
+                    exec(cell.source, namespace)
+            result = namespace
         plt.close('all')
         expected = x[self.prep['NUMERICAL_FEATURES']].median().to_numpy()
         for name, pipeline in result['trained_models'].items():

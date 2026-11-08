@@ -1,39 +1,3 @@
-'Предобработка, обучаемая только через fit соответствующего Pipeline'
-import numpy as np
-import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, RobustScaler
-
-NUMERICAL_FEATURES = [
-    'person_age', 'person_income', 'person_emp_length', 'loan_amnt',
-    'loan_int_rate', 'loan_percent_income', 'cb_person_cred_hist_length',
-]
-NOMINAL_FEATURES = ['person_home_ownership', 'loan_intent', 'cb_person_default_on_file']
-ORDINAL_FEATURES = ['loan_grade']
-GRADE_ORDER = list('ABCDEFG')
-FEATURES = NUMERICAL_FEATURES + NOMINAL_FEATURES + ORDINAL_FEATURES
-
-
-def make_preprocessor():
-    'Каждый вызов создаёт новый, ещё не обученный преобразователь'
-    return ColumnTransformer([
-        ('numerical', Pipeline([
-            ('impute', SimpleImputer(strategy='median', add_indicator=True, keep_empty_features=True)),
-            ('scale', RobustScaler()),
-        ]), NUMERICAL_FEATURES),
-        ('nominal', Pipeline([
-            ('impute', SimpleImputer(strategy='most_frequent', keep_empty_features=True)),
-            ('encode', OneHotEncoder(handle_unknown='ignore', sparse_output=False)),
-        ]), NOMINAL_FEATURES),
-        ('ordinal', Pipeline([
-            ('impute', SimpleImputer(strategy='most_frequent', keep_empty_features=True)),
-            ('encode', OrdinalEncoder(categories=[GRADE_ORDER])),
-        ]), ORDINAL_FEATURES),
-    ], remainder='drop', verbose_feature_names_out=True)
-
-
 def prepare_applications(applications):
     'Проверка новых заявок; строки не удаляем, целевую переменную не принимаем'
     if not isinstance(applications, pd.DataFrame):
