@@ -52,16 +52,25 @@ file_summary = analysis_train.groupby('file_block', observed=True).agg(
 for _title, _table in [
     ('Грейд, распределение ставки и частота дефолта на train', grade_summary),
     ('Проверка формулы доли кредита на train', ratio_summary),
-    ('Прошлый дефолт внутри грейдов: n и доля loan_status=1', interaction_summary),
-    ('Сумма × доход: квартильные группы, без причинной интерпретации', amount_income_summary),
+    ('Прошлый дефолт внутри грейдов: сколько записей и какая доля дефолтов', interaction_summary),
+    ('Сумма и доход: сравнение четырёх групп', amount_income_summary),
     ('Кредитная история внутри возрастных диапазонов', age_history_summary),
-    ('История внутри возраста и грейда: только ячейки n≥30, диапазон частот', conditional_history_checks),
-    ('Ставка внутри грейда: терцили 0–2, наблюдения с известной ставкой', within_grade_rate_summary),
+    ('История при похожем возрасте и грейде: группы от 30 записей', conditional_history_checks),
+    ('Ставка внутри грейда: три группы от низкой к высокой', within_grade_rate_summary),
     (f'Высокие доходы: граница 95-го процентиля train = {income_95:,.0f}', high_income_summary),
     ('Исходный порядок строк: последовательные блоки файла, только записи train', file_summary),
 ]:
     display(Markdown('##### ' + _title))
-    display(_table.round(4))
+    display(_table.round(4).rename(columns={
+        'n': 'Записей', 'defaults': 'Дефолтов', 'default_rate': 'Доля дефолтов',
+        'rate_n': 'Известных ставок', 'rate_median': 'Медиана ставки',
+        'rate_q25': 'Ставка: 25%', 'rate_q75': 'Ставка: 75%',
+        'history_groups': 'Групп по длине истории', 'min_cell_n': 'Минимум записей в группе',
+        'min_default_rate': 'Наименьшая доля дефолтов', 'max_default_rate': 'Наибольшая доля дефолтов',
+        'age_median': 'Медиана возраста', 'history_median': 'Медиана длины истории',
+        'income_median': 'Медиана дохода', 'grade_A_share': 'Доля грейда A',
+        'rate_missing': 'Доля пропусков ставки',
+    }))
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 5))
 sns.boxplot(data=analysis_train, x='grade_ordered', y='loan_int_rate', ax=axes[0], color='#78a6c8', showfliers=False)

@@ -1,4 +1,4 @@
-"""Preserve legacy content while permitting the explicitly requested new outline."""
+"""Check legacy cells and explicitly approved narrative edits."""
 import json
 from collections import Counter
 
@@ -28,8 +28,14 @@ def compare_legacy_content(original, generated, root, manifest):
             stored_outputs = False
         if original_cell.cell_type == 'markdown':
             text = original_cell.source
-            for before, after in edits:
-                text = text.replace(before, after)
+            for edit in edits:
+                if isinstance(edit, list):
+                    before, after = edit
+                    text = text.replace(before, after)
+                elif edit['origin_cell'] == index:
+                    if text != edit['before']:
+                        errors.append(f'Narrative edit baseline mismatch: legacy cell {index}')
+                    text = edit['after']
             if cell.source != text:
                 errors.append(f'Unapproved narrative change: legacy cell {index}')
             if cell.get('attachments', {}) != original_cell.get('attachments', {}):
