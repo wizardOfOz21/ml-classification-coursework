@@ -55,3 +55,22 @@ assert namespace['x'] == 4
             for cell in document.cells:
                 for splice in cell.metadata.get('modular', {}).get('splices', []):
                     self.assertEqual((ROOT / splice['path']).parent, path.parent / '_code')
+
+    def test_problem_index_loads_inputs_before_preliminary_analysis(self):
+        notebook = nbformat.read(ROOT / 'src/notebooks/01_problem/index.ipynb', as_version=4)
+        namespace = {'display': lambda *args, **kwargs: None}
+        for cell in notebook.cells:
+            transport = cell.metadata.get('modular', {})
+            if 'include' in transport:
+                break
+            if cell.cell_type == 'code' and not transport.get('development_only'):
+                exec(cell.source, namespace)
+        self.assertIn('data_raw', namespace, 'Stage 1 must load its inputs before delegating analysis')
+        self.assertEqual(namespace['data_raw'].shape, (32581, 12))
+        self.assertEqual(set(namespace['source_descriptions']), set(namespace['data_raw'].columns))
+        self.assertNotIn('columns_info', namespace)
+        self.assertNotIn('train', namespace)
+        text = '\n'.join(cell.source for cell in notebook.cells if cell.cell_type == 'markdown')
+        activity = text.split('**Что делаем**', 1)[1].split('### Исходное задание', 1)[0]
+        self.assertNotIn('бинарной классификации', activity)
+        self.assertIn('Критерий оценивания', text)
