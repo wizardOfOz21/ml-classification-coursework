@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from tooling.common import ROOT, MANIFEST, load_manifest
+from tooling.build.statistics import write_statistics
 
 import nbformat
 
@@ -108,6 +109,7 @@ def build_notebook(root=ROOT, output=None):
     if output is not None:
         output.parent.mkdir(parents=True, exist_ok=True)
         nbformat.write(notebook, output)
+        write_statistics(output)
     return notebook
 
 

@@ -10,6 +10,7 @@ from nbclient import NotebookClient
 from jupyter_client import KernelManager
 from tooling.common import ROOT, load_manifest
 from tooling.build.builder import build_notebook
+from tooling.build.statistics import write_statistics
 
 
 def run(target='submission', timeout=300):
@@ -40,6 +41,7 @@ def run(target='submission', timeout=300):
     nbformat.validate(notebook)
     output.parent.mkdir(parents=True, exist_ok=True)
     nbformat.write(notebook, output)
+    write_statistics(output)
     print(f'Executed {output}: {len(notebook.cells)} cells')
     return output
 

@@ -98,6 +98,16 @@ class BuilderTests(unittest.TestCase):
         (self.root / 'src/helpers.py').write_text('def f(value):\n    return value * offset\n')
         self.assertIn('return value * offset', build_notebook(self.root).cells[1].source)
 
+    def test_writing_custom_artifact_creates_statistics(self):
+        output = self.root / 'build/custom.ipynb'
+        build_notebook(self.root, output)
+        report = output.with_suffix('.stats.txt')
+        self.assertTrue(report.is_file())
+        text = report.read_text()
+        self.assertIn(str(output.stat().st_size), text)
+        self.assertIn('Соотношение Markdown/код', text)
+        self.assertIn('Цикломатическая', text)
+
     def test_refuses_to_overwrite_either_original(self):
         for name in ['solution.ipynb', 'solution.original.ipynb', 'notebooks/01.ipynb', 'config/build/project.json']:
             with self.assertRaises(ValueError):
