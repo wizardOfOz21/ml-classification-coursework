@@ -30,7 +30,6 @@
     }
   ],
   "modules": [
-    "src/notebooks/03_analysis/03_correlations/_code/64_calculate_associations.py",
     "src/notebooks/03_analysis/03_correlations/_code/66_plot_associations.py",
     "src/notebooks/03_analysis/_code/conclusions.py",
     "src/notebooks/03_analysis/_code/findings.py",
