@@ -117,11 +117,16 @@ def build_notebook(root=ROOT, output=None):
     for section in manifest['sections']:
         append_section(section['file'])
     project = tomllib.loads((root / 'pyproject.toml').read_text(encoding='utf-8'))['project']
+    notebook_dependencies = [
+        dependency.split('==', 1)[0] for dependency in project['dependencies']
+        if dependency.split('==', 1)[0].lower() != 'ipython'
+    ]
     setup_cells = [
         nbformat.v4.new_markdown_cell(
             '## Перед запуском\n\n'
             f'Требуется Python `{project["requires-python"]}`. '
-            'Следующая ячейка устанавливает зависимости перед импортами. '
+            'Следующая ячейка устанавливает библиотеки без закрепления версий '
+            'и без принудительного обновления. IPython предоставляет ядро Jupyter/Colab. '
             'После обновления уже загруженных библиотек '
             'может потребоваться перезапуск ядра.\n\n'
             '**Поместите файл `credit_risk_dataset.csv` в ту же папку, что и notebook** '
@@ -130,7 +135,7 @@ def build_notebook(root=ROOT, output=None):
             'Датасет автоматически не скачивается.'
         ),
         nbformat.v4.new_code_cell(
-            '%pip install ' + ' '.join(f'"{item}"' for item in project['dependencies'])
+            '%pip install ' + ' '.join(notebook_dependencies)
             + '\n\nfrom pathlib import Path\n\ndataset_path = Path("credit_risk_dataset.csv")'
         ),
     ]
