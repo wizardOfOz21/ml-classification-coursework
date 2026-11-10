@@ -8,14 +8,13 @@ import tempfile
 import nbformat
 from nbclient import NotebookClient
 from jupyter_client import KernelManager
-from tooling.common import ROOT, load_manifest
+from tooling.common import ROOT, load_config
 from tooling.build.builder import build_notebook, copy_dataset
 from tooling.build.statistics import write_statistics
 
 
 def run(timeout=300):
-    manifest = load_manifest()
-    output = ROOT / manifest['output']
+    output = ROOT / load_config()['output']
     notebook = build_notebook()
     copy_dataset(ROOT, output.parent)
     runs = ROOT / 'tmp/runs'
