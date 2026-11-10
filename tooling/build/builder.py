@@ -116,7 +116,7 @@ def build_notebook(root=ROOT, output=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--target', choices=['submission', 'validation'], default='submission')
+    parser.add_argument('--target', choices=['submission'], default='submission')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     output = args.output or ROOT / load_manifest()['targets'][args.target]['output']

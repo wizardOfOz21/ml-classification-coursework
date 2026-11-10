@@ -1,6 +1,0 @@
-{
-  "timeout": 180,
-  "artifacts": "tmp/reports/validation",
-  "report": "tmp/reports/validation_report.md",
-  "generated": "tmp/build/solution.ipynb"
-}

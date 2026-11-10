@@ -48,7 +48,7 @@ def run(target='submission', timeout=300):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--target', choices=['submission', 'validation'], default='submission')
+    parser.add_argument('--target', choices=['submission'], default='submission')
     parser.add_argument('--timeout', type=int, default=300)
     args = parser.parse_args()
     run(args.target, args.timeout)

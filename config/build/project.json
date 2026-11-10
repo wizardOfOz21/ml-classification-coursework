@@ -1,7 +1,5 @@
 {
   "version": 1,
-  "baseline": "tests/fixtures/solution.original.ipynb",
-  "baseline_sha256": "952494a06db9bc9a5c8e3fb31148b88b5e1d22dd48ce96b52b949e9792f50e6b",
   "metadata": {
     "kernelspec": {
       "display_name": ".venv (3.13.18)",
@@ -38,14 +36,9 @@
     "src/notebooks/_code/prepare_applications.py",
     "src/notebooks/_code/final_conclusions.py"
   ],
-  "archived_working": "tests/fixtures/solution.working-before-layout.ipynb",
-  "archived_working_sha256": "dabf4a4fe05fcea3e85c1c77426715328f158133c69f766729b4098d9836a263",
   "targets": {
     "submission": {
       "output": "dist/solution.ipynb"
-    },
-    "validation": {
-      "output": "tmp/build/solution.ipynb"
     }
   },
   "dataset_directory": "dataset",
@@ -78,21 +71,5 @@
       "file": "src/notebooks/07_operation.ipynb",
       "title": "7 Эксплуатация"
     }
-  ],
-  "documentation_edits": "config/build/documentation-edits.json",
-  "legacy_cell_count": 68,
-  "extensions": {
-    "first_new_stage": "src/notebooks/03_analysis/04_hypothesis_checks.ipynb",
-    "description": "Содержательное дополнение после неизменённого EDA; original сравнивается только с legacy-ячейками."
-  },
-  "static_description_tables": true,
-  "cleared_output_cells": [
-    3,
-    5,
-    7,
-    29
-  ],
-  "python_findings": true,
-  "code_edits": "config/build/code-edits.json",
-  "sequential_income_plots": true
+  ]
 }
