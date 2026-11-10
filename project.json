@@ -1,5 +1,5 @@
 {
-  "entry": "src/index.ipynb",
+  "entry": "src/_index.ipynb",
   "output": "build/solution.ipynb",
   "dataset": "dataset/credit_risk_dataset.csv"
 }

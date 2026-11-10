@@ -23,7 +23,7 @@ def draw_arrow(ax, start, end):
 
 def render():
     directory = Path(__file__).resolve().parent
-    notebook_path = directory.parent / 'index.ipynb'
+    notebook_path = directory.parent / '_index.ipynb'
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'svg.fonttype': 'none',
                          'svg.hashsalt': 'analysis-processing-cycle'})
     fig, ax = plt.subplots(figsize=(10, 3.2))
