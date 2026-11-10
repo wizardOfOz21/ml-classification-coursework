@@ -8,16 +8,12 @@ def empty_findings():
 
 def update_findings(table, additions=(), remove=()):
     """Записи: (id, вывод, решение) Метки new/removed действуют до следующего обновления"""
-    rows = list(additions)
-    keys = [row[0] for row in rows]
-    if len(keys) != len(set(keys)):
-        raise ValueError('В одном обновлении не должно быть повторных id')
     result = table.loc[table['Метка'].ne('removed')].copy()
     result['Метка'] = ''
     for key in remove:
         if key in result.index:
             result.loc[key, 'Метка'] = 'removed'
-    for key, finding, decision in rows:
+    for key, finding, decision in additions:
         if key in result.index:
             old = result.loc[key]
             if old['Выводы'] != finding or old['Решения'] != decision:

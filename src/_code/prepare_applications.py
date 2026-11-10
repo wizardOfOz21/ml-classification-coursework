@@ -1,16 +1,10 @@
 def prepare_applications(applications):
     'Проверка новых заявок; строки не удаляем, целевую переменную не принимаем'
-    if not isinstance(applications, pd.DataFrame):
-        raise TypeError('Ожидается DataFrame с признаками заявок')
     if not applications.columns.is_unique or set(applications.columns) != set(FEATURES):
         raise ValueError('Неверный набор столбцов: нужны ровно 11 признаков без loan_status')
     result = applications.loc[:, FEATURES].copy()
     for column in NUMERICAL_FEATURES:
-        result[column] = pd.to_numeric(result[column], errors='raise').astype(float)
-        if np.isinf(result[column]).any():
-            raise ValueError(f'Бесконечное значение: {column}')
-    if not result['loan_grade'].dropna().isin(GRADE_ORDER).all():
-        raise ValueError('Неизвестная категория loan_grade: допустимы A–G или пропуск')
+        result[column] = pd.to_numeric(result[column]).astype(float)
     # То же правило очистки стажа, что до разбиения; на инференсе не теряем строки.
     employment = result['person_emp_length']
     result.loc[(employment < 0) | (employment > 86), 'person_emp_length'] = np.nan
