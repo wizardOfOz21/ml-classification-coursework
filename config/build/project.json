@@ -38,7 +38,7 @@
   ],
   "targets": {
     "submission": {
-      "output": "dist/solution.ipynb"
+      "output": "build/solution.ipynb"
     }
   },
   "dataset_directory": "dataset",
