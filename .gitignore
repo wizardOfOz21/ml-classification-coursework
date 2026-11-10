@@ -16,14 +16,6 @@ htmlcov/
 # Временные файлы Jupyter
 .ipynb_checkpoints/
 
-# Воспроизводимые результаты сборки и проверок
-/tmp/
-/build/*
-!/build/solution.stats.txt
-# Совместимость со старыми путями
-/solution.generated.ipynb
-/validation_artifacts/
-
 # Локальные настройки редакторов
 .vscode/
 .idea/
