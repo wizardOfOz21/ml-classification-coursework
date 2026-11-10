@@ -13,6 +13,7 @@ from tooling.common import ROOT, MANIFEST, load_manifest
 from tooling.build.statistics import write_statistics
 
 import nbformat
+from IPython.core.inputtransformer2 import TransformerManager
 
 
 def project_path(root, relative):
@@ -33,10 +34,11 @@ def copy_dataset(root, directory):
 def check_code(cells):
     """Reject accidental duplicate definitions or remaining project imports."""
     definitions = set()
+    transformer = TransformerManager()
     for cell in cells:
         if cell.cell_type != 'code':
             continue
-        tree = ast.parse(cell.source)
+        tree = ast.parse(transformer.transform_cell(cell.source))
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 if node.name in definitions:
@@ -119,8 +121,8 @@ def build_notebook(root=ROOT, output=None):
         nbformat.v4.new_markdown_cell(
             '## Перед запуском\n\n'
             f'Требуется Python `{project["requires-python"]}`. '
-            'Если нужные библиотеки не установлены, раскомментируйте и выполните '
-            'команду в следующей ячейке. После обновления уже загруженных библиотек '
+            'Следующая ячейка устанавливает зависимости перед импортами. '
+            'После обновления уже загруженных библиотек '
             'может потребоваться перезапуск ядра.\n\n'
             '**Поместите файл `credit_risk_dataset.csv` в ту же папку, что и notebook** '
             'и запускайте notebook из этой папки. В Google Colab загрузите CSV '
@@ -128,8 +130,7 @@ def build_notebook(root=ROOT, output=None):
             'Датасет автоматически не скачивается.'
         ),
         nbformat.v4.new_code_cell(
-            '# При необходимости раскомментируйте команду установки зависимостей:\n'
-            '# %pip install ' + ' '.join(f'"{item}"' for item in project['dependencies'])
+            '%pip install ' + ' '.join(f'"{item}"' for item in project['dependencies'])
             + '\n\nfrom pathlib import Path\n\ndataset_path = Path("credit_risk_dataset.csv")'
         ),
     ]
