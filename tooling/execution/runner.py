@@ -24,7 +24,6 @@ def run(target='submission', timeout=300):
         env = os.environ.copy()
         env.pop('PYTHONPATH', None)
         env.update(IPYTHONDIR=str(temp / 'ipython'), JUPYTER_RUNTIME_DIR=str(temp / 'runtime'),
-                   MPLCONFIGDIR=str(temp / 'matplotlib'), PYTHONPYCACHEPREFIX=str(temp / 'python-cache'),
                    MPLBACKEND='module://matplotlib_inline.backend_inline', PYTHONHASHSEED='0')
         km = KernelManager(kernel_name='python3')
         km.kernel_spec.argv = [sys.executable, '-m', 'ipykernel_launcher', '-f', '{connection_file}']
