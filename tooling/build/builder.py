@@ -5,7 +5,9 @@ import ast
 import copy
 import json
 from pathlib import Path
+import shutil
 import sys
+import tomllib
 
 from tooling.common import ROOT, MANIFEST, load_manifest
 from tooling.build.statistics import write_statistics
@@ -18,6 +20,14 @@ def project_path(root, relative):
     if not path.is_relative_to(root.resolve()):
         raise ValueError(f'Path escapes project: {relative}')
     return path
+
+
+def copy_dataset(root, directory):
+    source = project_path(root, load_manifest(root)['dataset_directory']) / 'credit_risk_dataset.csv'
+    destination = Path(directory) / source.name
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if source.resolve() != destination.resolve():
+        shutil.copyfile(source, destination)
 
 
 def check_code(cells):
@@ -104,10 +114,31 @@ def build_notebook(root=ROOT, output=None):
             notebook.cells.append(cell)
     for section in manifest['sections']:
         append_section(section['file'])
+    project = tomllib.loads((root / 'pyproject.toml').read_text(encoding='utf-8'))['project']
+    setup_cells = [
+        nbformat.v4.new_markdown_cell(
+            '## Перед запуском\n\n'
+            f'Требуется Python `{project["requires-python"]}`. '
+            'Если нужные библиотеки не установлены, раскомментируйте и выполните '
+            'команду в следующей ячейке. После обновления уже загруженных библиотек '
+            'может потребоваться перезапуск ядра.\n\n'
+            '**Поместите файл `credit_risk_dataset.csv` в ту же папку, что и notebook** '
+            'и запускайте notebook из этой папки. В Google Colab загрузите CSV '
+            'в рабочую папку среды выполнения через панель файлов. '
+            'Датасет автоматически не скачивается.'
+        ),
+        nbformat.v4.new_code_cell(
+            '# При необходимости раскомментируйте команду установки зависимостей:\n'
+            '# %pip install ' + ' '.join(f'"{item}"' for item in project['dependencies'])
+            + '\n\nfrom pathlib import Path\n\ndataset_path = Path("credit_risk_dataset.csv")'
+        ),
+    ]
+    notebook.cells[1:1] = setup_cells
     check_code(notebook.cells)
     nbformat.validate(notebook)
     if output is not None:
         output.parent.mkdir(parents=True, exist_ok=True)
+        copy_dataset(root, output.parent)
         nbformat.write(notebook, output)
         write_statistics(output)
     return notebook
@@ -116,10 +147,9 @@ def build_notebook(root=ROOT, output=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--target', choices=['submission'], default='submission')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
-    output = args.output or ROOT / load_manifest()['targets'][args.target]['output']
+    output = args.output or ROOT / load_manifest()['output']
     result = build_notebook(output=output)
     print(f'Built {output}: {len(result.cells)} cells')
 

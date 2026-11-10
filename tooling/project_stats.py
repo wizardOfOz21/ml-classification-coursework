@@ -1,4 +1,4 @@
-"""Print five project metrics, respecting Git's ignore rules."""
+"""Print and save five project metrics, respecting Git's ignore rules."""
 import json
 from pathlib import Path
 import subprocess
@@ -13,7 +13,9 @@ def main():
     )
     files = sorted({ROOT / name.decode('utf-8', errors='surrogateescape')
                     for name in result.stdout.split(b'\0') if name})
-    files = [path for path in files if path.is_file() and not path.is_symlink()]
+    reports = {ROOT / 'project.stats.txt', ROOT / 'build/solution.stats.txt'}
+    files = [path for path in files
+             if path.is_file() and not path.is_symlink() and path not in reports]
     size = code_lines = text_lines = notebooks = 0
     for path in files:
         size += path.stat().st_size
@@ -33,11 +35,16 @@ def main():
             code_lines += len(path.read_text(encoding='utf-8').splitlines())
         elif path.suffix in {'.md', '.txt'}:
             text_lines += len(path.read_text(encoding='utf-8').splitlines())
-    print(f'Размер файлов: {size / 1024**2:.2f} МиБ')
-    print(f'Файлов: {len(files)}')
-    print(f'Notebooks: {notebooks}')
-    print(f'Строк кода: {code_lines}')
-    print(f'Строк текста: {text_lines}')
+    lines = [
+        f'Размер файлов: {size / 1024**2:.2f} МиБ',
+        f'Файлов: {len(files)}',
+        f'Notebooks: {notebooks}',
+        f'Строк кода: {code_lines}',
+        f'Строк текста: {text_lines}',
+    ]
+    report = '\n'.join(lines) + '\n'
+    (ROOT / 'project.stats.txt').write_text(report, encoding='utf-8')
+    print(report, end='')
 
 
 if __name__ == '__main__':

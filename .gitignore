@@ -18,7 +18,8 @@ htmlcov/
 
 # Воспроизводимые результаты сборки и проверок
 /tmp/
-/build/
+/build/*
+!/build/solution.stats.txt
 # Совместимость со старыми путями
 /solution.generated.ipynb
 /validation_artifacts/

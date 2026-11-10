@@ -9,14 +9,15 @@ import nbformat
 from nbclient import NotebookClient
 from jupyter_client import KernelManager
 from tooling.common import ROOT, load_manifest
-from tooling.build.builder import build_notebook
+from tooling.build.builder import build_notebook, copy_dataset
 from tooling.build.statistics import write_statistics
 
 
-def run(target='submission', timeout=300):
+def run(timeout=300):
     manifest = load_manifest()
-    output = ROOT / manifest['targets'][target]['output']
+    output = ROOT / manifest['output']
     notebook = build_notebook()
+    copy_dataset(ROOT, output.parent)
     runs = ROOT / 'tmp/runs'
     runs.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='submission-', dir=runs) as directory:
@@ -28,9 +29,9 @@ def run(target='submission', timeout=300):
         km = KernelManager(kernel_name='python3')
         km.kernel_spec.argv = [sys.executable, '-m', 'ipykernel_launcher', '-f', '{connection_file}']
         client = NotebookClient(notebook, km=km, timeout=timeout,
-                                resources={'metadata': {'path': str(ROOT)}})
+                                resources={'metadata': {'path': str(output.parent)}})
         try:
-            client.execute(cwd=str(ROOT), env=env)
+            client.execute(cwd=str(output.parent), env=env)
         finally:
             if km.has_kernel:
                 if client.kc is not None:
@@ -47,10 +48,9 @@ def run(target='submission', timeout=300):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--target', choices=['submission'], default='submission')
     parser.add_argument('--timeout', type=int, default=300)
     args = parser.parse_args()
-    run(args.target, args.timeout)
+    run(timeout=args.timeout)
 
 
 if __name__ == '__main__':

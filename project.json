@@ -36,11 +36,6 @@
     "src/_code/prepare_applications.py",
     "src/_code/final_conclusions.py"
   ],
-  "targets": {
-    "submission": {
-      "output": "build/solution.ipynb"
-    }
-  },
   "dataset_directory": "dataset",
   "stages": [
     {
@@ -71,5 +66,6 @@
       "file": "src/07_operation.ipynb",
       "title": "7 Эксплуатация"
     }
-  ]
+  ],
+  "output": "build/solution.ipynb"
 }
