@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+if [ ! -x .venv/bin/python ]; then
+    echo 'Для пересчёта статистики нужно окружение .venv с зависимостями проекта.' >&2
+    exit 1
+fi
+exec .venv/bin/python -m tooling.pre_commit
