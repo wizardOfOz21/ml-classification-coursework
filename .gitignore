@@ -18,6 +18,7 @@ htmlcov/
 
 # Воспроизводимые результаты сборки и проверок
 /tmp/
+/dist/
 # Совместимость со старыми путями
 /solution.generated.ipynb
 /validation_artifacts/

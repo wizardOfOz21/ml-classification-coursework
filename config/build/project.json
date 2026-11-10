@@ -42,10 +42,10 @@
   "archived_working_sha256": "dabf4a4fe05fcea3e85c1c77426715328f158133c69f766729b4098d9836a263",
   "targets": {
     "submission": {
-      "output": "tmp/build/submission/solution.ipynb"
+      "output": "dist/solution.ipynb"
     },
     "validation": {
-      "output": "tmp/build/validation/solution.ipynb"
+      "output": "tmp/build/solution.ipynb"
     }
   },
   "dataset_directory": "dataset",

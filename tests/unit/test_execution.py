@@ -11,7 +11,7 @@ class SubmissionExecutionTests(unittest.TestCase):
     def test_execution_failure_keeps_previous_output(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            target = root / 'tmp/build/submission/solution.ipynb'
+            target = root / 'dist/solution.ipynb'
             target.parent.mkdir(parents=True)
             target.write_bytes(b'previous successful submission')
             statistics = target.with_suffix('.stats.html')
@@ -30,7 +30,7 @@ class SubmissionExecutionTests(unittest.TestCase):
         import hashlib
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            target = root / 'tmp/build/submission/solution.ipynb'
+            target = root / 'dist/solution.ipynb'
             notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell('print(1)')])
             manifest = {'targets': {'submission': {'output': str(target.relative_to(root))}}}
             def executed(**kwargs):
