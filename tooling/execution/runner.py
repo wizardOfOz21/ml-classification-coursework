@@ -9,14 +9,14 @@ import nbformat
 from nbclient import NotebookClient
 from jupyter_client import KernelManager
 from tooling.common import ROOT, load_config
-from tooling.build.builder import build_notebook, copy_dataset
+from tooling.build.builder import build_notebook
 from tooling.build.statistics import write_statistics
 
 
 def run(timeout=300):
     output = ROOT / load_config()['output']
-    notebook = build_notebook()
-    copy_dataset(ROOT, output.parent)
+    notebook = build_notebook(output=output.with_suffix('.unexecuted.ipynb'))
+    write_statistics(output)
     runs = ROOT / 'tmp/runs'
     runs.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='submission-', dir=runs) as directory:

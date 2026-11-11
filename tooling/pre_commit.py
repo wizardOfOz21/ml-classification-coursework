@@ -1,4 +1,4 @@
-"""Refresh statistics from staged sources without rebuilding local artifacts."""
+"""Refresh statistics from staged notebook artifacts without rebuilding them."""
 import os
 from pathlib import Path
 import shutil
@@ -21,7 +21,7 @@ def main():
             cwd=ROOT, check=True,
         )
         subprocess.run(
-            [sys.executable, '-m', 'tooling.build.builder'], cwd=snapshot, check=True,
+            [sys.executable, '-m', 'tooling.build.statistics'], cwd=snapshot, check=True,
         )
         env = os.environ.copy()
         env.update(GIT_DIR=git_dir, GIT_WORK_TREE=str(snapshot))

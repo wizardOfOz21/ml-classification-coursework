@@ -51,6 +51,10 @@ def build_notebook(root=ROOT, output=None):
     entry = root / load_config(root)['entry']
     notebook = nbformat.read(entry, as_version=4)
     notebook.cells = list(expand_notebook(entry))
+    for cell in notebook.cells:
+        if cell.cell_type == 'code':
+            cell.outputs = []
+            cell.execution_count = None
     nbformat.validate(notebook)
     if output is not None:
         output = Path(output).resolve()
@@ -58,7 +62,6 @@ def build_notebook(root=ROOT, output=None):
             raise ValueError('Output must be an .ipynb file outside src/')
         copy_dataset(root, output.parent)
         nbformat.write(notebook, output)
-        write_statistics(output)
     return notebook
 
 
@@ -67,8 +70,10 @@ def main():
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     output = args.output or ROOT / load_config()['output']
-    notebook = build_notebook(output=output)
-    print(f'Built {output}: {len(notebook.cells)} cells')
+    unexecuted = output.with_suffix('.unexecuted.ipynb')
+    notebook = build_notebook(output=unexecuted)
+    write_statistics(output)
+    print(f'Built {unexecuted}: {len(notebook.cells)} cells')
 
 
 if __name__ == '__main__':
