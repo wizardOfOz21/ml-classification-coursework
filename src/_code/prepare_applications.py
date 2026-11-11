@@ -1,7 +1,7 @@
 def prepare_applications(applications):
     'Проверка новых заявок; строки не удаляем, целевую переменную не принимаем'
     if not applications.columns.is_unique or set(applications.columns) != set(FEATURES):
-        raise ValueError('Неверный набор столбцов: нужны ровно 11 признаков без loan_status')
+        raise ValueError('Неверный набор столбцов: нужны ровно 9 выбранных признаков без loan_status')
     result = applications.loc[:, FEATURES].copy()
     for column in NUMERICAL_FEATURES:
         result[column] = pd.to_numeric(result[column]).astype(float)
@@ -12,11 +12,10 @@ def prepare_applications(applications):
         (result['person_age'] < 18) | (result['person_age'] > 100)
         | (result['person_income'] <= 0) | (result['loan_amnt'] <= 0)
         | (result['loan_int_rate'] <= 0)
-        | (result['loan_percent_income'] < 0) | (result['loan_percent_income'] > 1)
         | (result['cb_person_cred_hist_length'] < 0)
     )
     if invalid.any():
         raise ValueError('Недопустимые числовые значения: исправьте заявку до прогноза')
-    for column in NOMINAL_FEATURES + ORDINAL_FEATURES:
+    for column in NOMINAL_FEATURES:
         result[column] = result[column].astype(object).where(result[column].notna(), np.nan)
     return result
