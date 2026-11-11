@@ -1,4 +1,4 @@
-"""Одна таблица выводов для последовательных шагов анализа"""
+# Одна таблица выводов для последовательных шагов анализа
 import pandas as pd
 
 
@@ -7,7 +7,7 @@ def empty_findings():
 
 
 def update_findings(table, additions=(), remove=()):
-    """Записи: (id, вывод, решение) Метки new/removed действуют до следующего обновления"""
+    # Записи: (id, вывод, решение) Метки new/removed действуют до следующего обновления
     result = table.loc[table['Метка'].ne('removed')].copy()
     result['Метка'] = ''
     for key in remove:
@@ -25,12 +25,12 @@ def update_findings(table, additions=(), remove=()):
 
 
 def active_findings(table):
-    """Актуальные строки без служебных меток и удаляемых версий"""
+    # Актуальные строки без служебных меток и удаляемых версий
     return table.loc[table['Метка'].ne('removed'), ['Выводы', 'Решения']].copy()
 
 
 def findings_view(table, only_new=False):
-    """Полная таблица или только новые строки с прежними цветами и знаками"""
+    # Полная таблица или только новые строки с прежними цветами и знаками
     selected = table.loc[table['Метка'].eq('new')] if only_new else table
     view = selected[['Выводы', 'Решения']].copy()
     signs = selected['Метка'].map({'new': '+ ', 'removed': '− ', '': ''}).fillna('')
