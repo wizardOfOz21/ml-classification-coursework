@@ -36,9 +36,7 @@ Desktop.ini
 !.env.sample
 
 # Временные файлы и журналы
+tmp/
 *.log
 *.tmp
 *.bak
-
-# Temporary notebook execution files
-/tmp/runs/
