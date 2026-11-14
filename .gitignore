@@ -39,3 +39,6 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+
+# Temporary notebook execution files
+/tmp/runs/
